@@ -56,6 +56,11 @@ Corren sin red, sobre datos reales congelados (las velas de 5 minutos de TSLA
 de 60 días, el escaneo de las 10:15, los filings reales de la SEC). Si pasan,
 la aritmética que va a dimensionar tus posiciones funciona.
 
+Las mismas 315 pruebas corren en GitHub Actions en cada push
+([`.github/workflows/tests.yml`](.github/workflows/tests.yml)), en Python 3.9,
+3.11 y 3.13, junto con la verificación SHA-256 del código importado. Así que si
+alguna vez alguien toca una de las once herramientas, salta en el PR.
+
 ### 3. Pon tus números
 
 Abre [`trader/config.json`](trader/config.json) y edítalo. **Los valores que
@@ -218,6 +223,7 @@ Lo escribo aquí para acordarme cuando se me olvide:
 ```
 README.md                    esto
 NOTICE.md                    procedencia, licencia y qué se modificó
+.github/workflows/tests.yml  CI: las 315 pruebas + verificación de integridad
 LICENSE                      MIT, de Jake Schincariol
 bin/trader                   el lanzador (nunca envía órdenes)
 trader/config.json           tus límites  <-- EDÍTALO

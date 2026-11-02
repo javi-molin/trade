@@ -80,6 +80,7 @@ de trading:
 | `bin/trader` | Lanzador con comandos en español. **No puede enviar órdenes:** solo ejecuta las herramientas de lectura y cálculo |
 | `trader/config.json` | Configuración lista para usar, con límites deliberadamente pequeños |
 | `.gitignore` | Para que el registro de operaciones, las claves y los `.env` no acaben publicados |
+| `.github/workflows/tests.yml` | CI: ejecuta las 315 pruebas en Python 3.9/3.11/3.13 y verifica los SHA-256 del código importado en cada push |
 | `docs/COMO-OPERAR.md` | La guía de uso paso a paso |
 | `docs/AUDITORIA.md` | El informe de la revisión de seguridad |
 | `docs/CHECKSUMS.txt` | SHA-256 de los 29 archivos originales |

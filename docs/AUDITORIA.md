@@ -172,11 +172,12 @@ efectiva el 4 de junio de 2026, con transición por broker hasta octubre de
 
 Hay que decirlas, porque un informe que no las dice no sirve:
 
-1. **No se ejecutó el código.** La política del entorno donde se hizo la
-   revisión bloquea ejecutar código externo. El veredicto es de lectura
-   estática, que es el método adecuado para buscar malware, pero **no se
-   verificó empíricamente que los números del README se reproduzcan**. Ejecutar
-   `bin/trader test` localmente cubre esa parte.
+1. **Quien hizo esta revisión no ejecutó el código.** La política del entorno
+   donde se hizo bloquea ejecutar código externo. El veredicto es de lectura
+   estática, que es el método adecuado para buscar malware, pero la revisión en
+   sí **no verificó empíricamente que los números del README se reproduzcan**.
+   Esa parte la cubre ahora la CI (`.github/workflows/tests.yml`), que ejecuta
+   las 315 pruebas en cada push, y `bin/trader test` en local.
 2. **Un solo commit.** El historial del repositorio original está aplastado, así
    que no hay historia que auditar ni forma de ver cómo evolucionó el código.
 3. **Esta auditoría cubre un commit concreto.** El autor puede cambiar cualquier
