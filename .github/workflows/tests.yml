@@ -5,8 +5,10 @@ name: tests
 # sobre los fixtures congelados del repositorio.
 
 on:
+  # Solo main en push: las ramas con PR abierto ya corren por pull_request, y
+  # escuchar las dos cosas en todas las ramas duplicaba cada job.
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
   workflow_dispatch:
 
