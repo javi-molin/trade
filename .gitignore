@@ -1,0 +1,29 @@
+# Resultados de ejecucion: son tuyos, cambian cada dia y no deben publicarse.
+trader/state/
+trader/portfolio.json
+trader/orders.json
+trader/plan.json
+trader/alerts.json
+trader/metrics.json
+trader/universe.json
+trader/scan*.json
+trader/*.csv
+trader/pdfs/
+trader/cache/
+
+# Nunca, bajo ningun concepto, en el repositorio.
+.env
+*.pem
+*.key
+claude_desktop_config.json
+**/secrets*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Sistema
+.DS_Store
+Thumbs.db
