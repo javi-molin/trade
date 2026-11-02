@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+# Lanzador amigable para las once herramientas del pack.
+#
+# Lo que este script SI hace: ejecutar las herramientas de lectura y de calculo
+# (escanear, noticias, entrada, salida, simulacion, tamano, riesgo, tickets).
+# Lo que este script NO hace, y no puede hacer: enviar una orden a un broker.
+# Ninguna herramienta de este repositorio habla con un broker. La orden la
+# envia Claude llamando al conector de tu broker, y solo despues de que tu
+# escribas "si" y pulses "Allow once".
+
+set -uo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+S="$REPO/.claude/skills"
+PY="${PYTHON:-python3}"
+cd "$REPO"
+
+c_b=$'\033[1m'; c_g=$'\033[32m'; c_y=$'\033[33m'; c_r=$'\033[31m'; c_0=$'\033[0m'
+
+die() { printf '%s%s%s\n' "$c_r" "$*" "$c_0" >&2; exit 1; }
+titulo() { printf '\n%s== %s ==%s\n' "$c_b" "$*" "$c_0"; }
+
+comprobar_python() {
+  command -v "$PY" >/dev/null 2>&1 || die "No encuentro $PY. Instala Python 3.8 o posterior."
+  "$PY" - <<'EOF' || die "Necesitas Python 3.8 o posterior."
+import sys
+sys.exit(0 if sys.version_info >= (3, 8) else 1)
+EOF
+}
+
+uso() {
+  cat <<'EOF'
+Uso:  bin/trader <comando> [opciones]
+
+  Preparacion
+    estado                 comprueba Python, la configuracion y los archivos
+    test                   ejecuta la suite completa, sin red (315 pruebas)
+    config                 muestra tu trader/config.json
+
+  Antes de abrir el mercado
+    universo               descarga la lista de ~5.900 acciones de EE.UU.
+    diario                 setups pre-mercado en todo el universo
+
+  Durante la sesion (hora de Nueva York)
+    escanear [--at HH:MM]  rupturas del rango de apertura hasta esa hora
+    noticias TSLA [...]    titulares, 8-K y el movimiento de hoy
+    entrada TSLA           esperando / activado / expirado
+    vigilar TSLA           vela a vela hasta que se active
+    salida                 stop y objetivo -> trader/plan.json
+    simular                10.000 replays + el historico del setup
+    tamano                 acciones segun tu presupuesto -> trader/orders.json
+    riesgo                 PASS / BLOCK de cada orden contra tus limites
+    ticket                 muestra el ticket en lenguaje claro (READY o no)
+    alertas-crear          alertas de stop, objetivo y cierre
+    alertas                suena lo que haya tocado
+
+  Analisis
+    analista TSLA          trimestres, crecimiento, beneficio por accion
+    congreso               operaciones declaradas por el Congreso de EE.UU.
+
+  Guia
+    flujo                  te lleva paso a paso por una operacion completa
+    ayuda                  esta pantalla
+
+Todo lo que no sea un comando conocido se pasa tal cual a la herramienta.
+EOF
+}
+
+# --------------------------------------------------------------- preparacion
+
+cmd_estado() {
+  titulo "Estado"
+  comprobar_python
+  printf '%s  Python: %s%s\n' "$c_g" "$("$PY" -V 2>&1)" "$c_0"
+
+  if [ -f trader/config.json ]; then
+    printf '%s  trader/config.json: existe%s\n' "$c_g" "$c_0"
+    "$PY" -I - <<'EOF'
+import json
+try:
+    c = json.load(open("trader/config.json"))
+except Exception as e:
+    raise SystemExit("  config ilegible: %s" % e)
+print("  presupuesto           %s USD" % c.get("budget"))
+print("  perdida max/operacion %s USD" % c.get("max_loss_per_trade_usd"))
+print("  perdida max/dia       %s USD" % c.get("max_daily_loss_usd"))
+print("  operaciones por dia   %s" % c.get("max_trades_per_day"))
+print("  cuenta                %s" % ("PAPEL (simulada)" if c.get("paper", True) else "*** DINERO REAL ***"))
+ua = (c.get("sec_user_agent") or "").strip()
+print("  sec_user_agent        %s" % (ua if ua and "TU NOMBRE" not in ua.upper()
+                                      else "SIN RELLENAR (las skills de la SEC no funcionaran)"))
+EOF
+  else
+    printf '%s  Falta trader/config.json%s\n' "$c_r" "$c_0"
+  fi
+
+  n=$(ls -d "$S"/trader-* 2>/dev/null | wc -l | tr -d ' ')
+  printf '  skills instaladas: %s de 11\n' "$n"
+  [ "$n" = "11" ] || printf '%s  Faltan skills en .claude/skills/%s\n' "$c_r" "$c_0"
+
+  titulo "Integridad del codigo original"
+  if (cd "$S" && sha256sum -c "$REPO/docs/CHECKSUMS.txt" --quiet 2>/dev/null); then
+    printf '%s  Los 29 archivos coinciden con el original auditado.%s\n' "$c_g" "$c_0"
+  else
+    printf '%s  Hay archivos modificados respecto al original. Revisa:%s\n' "$c_y" "$c_0"
+    (cd "$S" && sha256sum -c "$REPO/docs/CHECKSUMS.txt" 2>/dev/null | grep -v ': OK$' || true)
+  fi
+
+  titulo "Recordatorio"
+  echo "  Este repositorio no puede enviar ninguna orden por si solo."
+  echo "  Cuenta de papel por defecto. Lee docs/COMO-OPERAR.md antes de empezar."
+}
+
+cmd_test() {
+  comprobar_python
+  titulo "Suite de pruebas (sin red, sobre datos reales congelados)"
+  "$PY" -m unittest discover -s tests "$@"
+}
+
+# --------------------------------------------------------------- herramientas
+
+run() { comprobar_python; "$PY" "$S/$1" "${@:2}"; }
+
+cmd_flujo() {
+  cat <<'EOF'
+
+  Una operacion completa, en orden. Cada paso lee lo que escribio el anterior.
+
+   1  bin/trader universo              una vez al dia, antes de abrir
+   2  bin/trader escanear --at 10:15   que ha roto su rango de apertura
+   3  bin/trader noticias TSLA         hay alguna noticia que lo explique
+   4  bin/trader entrada TSLA          esta activado el setup
+   5  bin/trader salida                fija el stop y el objetivo ANTES de entrar
+   6  bin/trader simular               las probabilidades honestas del plan
+   7  bin/trader tamano                cuantas acciones caben en tu limite
+   8  bin/trader riesgo                PASS o BLOCK contra tus limites
+   9  bin/trader ticket                el ticket en lenguaje claro
+  10  en el chat: pidele a Claude      /trader-broker
+                                       Claude te ensena el ticket, tu escribes
+                                       "si", y luego pulsas "Allow once".
+  11  bin/trader alertas-crear         stop, objetivo y cierre a las 15:55 NY
+
+  Regla de oro: si el paso 6 no te convence, no hay paso 10.
+  Si el paso 8 dice BLOCK, no hay paso 10. No lo discutas con el programa.
+
+EOF
+}
+
+case "${1-ayuda}" in
+  estado|status)        shift; cmd_estado "$@" ;;
+  test|pruebas)         shift; cmd_test "$@" ;;
+  config)               shift; cat trader/config.json ;;
+  flujo|guia)           shift; cmd_flujo ;;
+  ayuda|-h|--help|help) uso ;;
+
+  universo)             shift; run trader-scanner/scan.py universe "$@" ;;
+  diario)               shift; run trader-scanner/scan.py daily "$@" ;;
+  escanear|orb)         shift; run trader-scanner/scan.py orb "$@" ;;
+  noticias)             shift; [ $# -gt 0 ] || die "Dime los tickers: bin/trader noticias TSLA AAPL"
+                        t=$(printf '%s,' "$@" | sed 's/,$//'); run trader-news/news.py --tickers "$t" ;;
+  entrada)              shift; run trader-entry/entry.py check "$@" ;;
+  vigilar)              shift; run trader-entry/entry.py watch "$@" ;;
+  salida)               shift; run trader-exit/exit.py plan --write "$@" ;;
+  simular)              shift; run trader-timemachine/timemachine.py run --write "$@" ;;
+  tamano|tamaño)        shift; run trader-budget/size.py --write "$@" ;;
+  riesgo)               shift; run trader-risk/check.py "$@" ;;
+  ticket|tickets)       shift; run trader-broker/ticket.py show "$@" ;;
+  registro)             shift; run trader-broker/ticket.py log "$@" ;;
+  alertas-crear)        shift; run trader-alerts/alerts.py add --from-plan "$@" ;;
+  alertas)              shift; run trader-alerts/alerts.py check "$@" ;;
+  analista)             shift; run trader-analyst/facts.py "$@" ;;
+  congreso|pelosi)      shift; run trader-pelosi/ptr.py index "$@" ;;
+
+  *) printf '%sComando desconocido: %s%s\n' "$c_y" "$1" "$c_0"; uso; exit 2 ;;
+esac

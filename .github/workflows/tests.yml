@@ -1,0 +1,88 @@
+name: tests
+
+# Cierra el hueco de verificacion: ejecuta las 315 pruebas y comprueba que el
+# codigo importado sigue siendo identico al auditado. Sin red: la suite corre
+# sobre los fixtures congelados del repositorio.
+
+on:
+  # Solo main en push: las ramas con PR abierto ya corren por pull_request, y
+  # escuchar las dos cosas en todas las ramas duplicaba cada job.
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pruebas (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Ejecutar la suite
+        run: python -m unittest discover -s tests -v
+
+  integridad:
+    name: integridad del codigo importado
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar los SHA-256 de los 29 archivos originales
+        run: |
+          cd .claude/skills
+          sha256sum -c ../../docs/CHECKSUMS.txt
+
+      - name: Comprobar que el lanzador no envia ordenes
+        run: |
+          # bin/trader solo debe invocar las herramientas del pack. Si alguna
+          # vez aparece aqui una llamada a un broker, esto falla a proposito.
+          bash -n bin/trader
+          ! grep -nE "place_stock_order|alpaca\.markets|api\.alpaca|ALPACA_API_KEY" bin/trader
+
+      - name: Comprobar que la cuenta de papel sigue siendo el valor por defecto
+        run: |
+          python - <<'EOF'
+          import json, sys
+          c = json.load(open("trader/config.json"))
+          fallos = []
+          if c.get("paper") is not True:
+              fallos.append('trader/config.json tiene "paper" distinto de true')
+          for k in ("allow_options", "allow_margin", "allow_short"):
+              if c.get(k) is not False:
+                  fallos.append('trader/config.json tiene "%s" distinto de false' % k)
+          if c.get("require_stop") is not True:
+              fallos.append('trader/config.json tiene "require_stop" distinto de true')
+          if fallos:
+              print("\n".join("  " + f for f in fallos))
+              print("\nSi el cambio es intencionado, edita este paso del workflow a mano.")
+              sys.exit(1)
+          print("cuenta de papel, sin opciones, sin margen, sin cortos, stop obligatorio")
+          EOF
+
+      - name: Comprobar que no se cuela ningun secreto
+        run: |
+          # Busca claves de verdad. Los archivos de ejemplo y la documentacion
+          # mencionan los nombres de las variables a proposito, asi que se
+          # excluyen; lo que se busca es un valor con pinta de clave.
+          encontrado=$(grep -rnE \
+            "(ALPACA_(API|SECRET)_KEY\"?\s*[:=]\s*\"?[A-Za-z0-9]{16,}|sk-[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)" \
+            --include="*.json" --include="*.md" --include="*.py" --include="*.yml" \
+            --exclude-dir=.git . || true)
+          if [ -n "$encontrado" ]; then
+            echo "Algo con pinta de clave esta versionado:"
+            echo "$encontrado"
+            exit 1
+          fi
+          echo "sin claves versionadas"
