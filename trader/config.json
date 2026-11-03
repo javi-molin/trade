@@ -1,6 +1,7 @@
 {
   "_leeme": "EDITA ESTE ARCHIVO ANTES DE USARLO. Los valores de abajo son deliberadamente pequenos y conservadores: son un punto de partida seguro, no una recomendacion. Las claves que empiezan por _ se ignoran.",
   "_paper": "paper true = cuenta simulada. NO lo cambies a false hasta tener meses de registro en papel.",
+  "_sec_user_agent": "NO pongas aqui tu email: este archivo esta en un repositorio publico. Usa la variable de entorno SEC_USER_AGENT, que tiene prioridad sobre este valor: export SEC_USER_AGENT=\"Tu Nombre tu@email.com\"",
 
   "budget": 1000,
   "cash_buffer_pct": 20,
@@ -29,5 +30,5 @@
   "allow_short": false,
   "pdt_guard": true,
 
-  "sec_user_agent": "TU NOMBRE tu-email@ejemplo.com"
+  "sec_user_agent": "Tu Nombre you@example.com"
 }

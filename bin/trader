@@ -87,9 +87,19 @@ print("  perdida max/operacion %s USD" % c.get("max_loss_per_trade_usd"))
 print("  perdida max/dia       %s USD" % c.get("max_daily_loss_usd"))
 print("  operaciones por dia   %s" % c.get("max_trades_per_day"))
 print("  cuenta                %s" % ("PAPEL (simulada)" if c.get("paper", True) else "*** DINERO REAL ***"))
-ua = (c.get("sec_user_agent") or "").strip()
-print("  sec_user_agent        %s" % (ua if ua and "TU NOMBRE" not in ua.upper()
-                                      else "SIN RELLENAR (las skills de la SEC no funcionaran)"))
+import os
+# La variable de entorno tiene prioridad sobre el archivo, y es donde debe
+# estar: trader/config.json se publica en un repositorio publico.
+ua = (os.environ.get("SEC_USER_AGENT") or "").strip()
+donde = "variable de entorno"
+if not ua or "@" not in ua or "you@example.com" in ua:
+    ua = (c.get("sec_user_agent") or "").strip()
+    donde = "trader/config.json (PUBLICO: mejor usa la variable)"
+if not ua or "@" not in ua or "you@example.com" in ua:
+    print("  identidad SEC         SIN RELLENAR: analista, noticias y congreso no funcionaran")
+    print("                        export SEC_USER_AGENT=\"Tu Nombre tu@email.com\"")
+else:
+    print("  identidad SEC         %s  [%s]" % (ua, donde))
 EOF
   else
     printf '%s  Falta trader/config.json%s\n' "$c_r" "$c_0"

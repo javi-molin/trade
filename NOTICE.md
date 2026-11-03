@@ -88,26 +88,43 @@ de trading:
 | `docs/permisos-ejemplo.json` | Permisos recomendados para `.claude/settings.json` |
 | `docs/README-original-en.md` | El README original, conservado |
 
-## Tu email y este repositorio
+## Este repositorio es público y tiene GitHub Pages
 
-Las skills de la SEC (`analista`, `noticias`, `congreso`) necesitan un
-`sec_user_agent` con nombre y email, porque la SEC lo exige para acceder a
-EDGAR. Ese dato viaja a la SEC en una cabecera HTTP, a ningún otro sitio.
+Dos hechos que conviene tener presentes, comprobados el 3 de noviembre de 2026:
 
-`trader/config.json` **sí está versionado** (para que el repositorio funcione
-recién clonado). Así que si pones tu email ahí y este repositorio es público,
-tu email queda público. Dos opciones:
+- `javi-molin/trade` es **público** (`"visibility": "public"`).
+- **GitHub Pages está activo** y publica el repositorio en
+  `https://javi-molin.github.io/trade/`. El panel responde HTTP 200 ahí, y
+  también lo hace `trader/config.json`.
+
+Decisión tomada: `trader/config.json` **sigue versionado**, para que el
+repositorio funcione recién clonado. Eso significa que tu presupuesto y tus
+límites de riesgo son públicos. Son cifras, no secretos, y es una elección
+consciente.
+
+Lo que **no** debe acabar ahí es tu identidad para la SEC. Va en la variable de
+entorno, que tiene prioridad sobre el archivo:
 
 ```bash
-# Opción A: usar la variable de entorno y dejar el config con el placeholder
 export SEC_USER_AGENT="Tu Nombre tu@email.com"
-
-# Opción B: dejar de versionar el config una vez lo hayas ajustado
-git rm --cached trader/config.json
-echo "trader/config.json" >> .gitignore
 ```
 
-La opción A es la recomendada.
+Tres cosas sostienen esa decisión:
+
+1. El valor que trae el archivo es `Tu Nombre you@example.com`. Las
+   herramientas detectan `you@example.com` como marcador y lo rechazan en vez
+   de mandarlo a la SEC (`facts.py:57`, `news.py:60`).
+2. `bin/trader estado` dice de dónde está leyendo la identidad y avisa si
+   viene del archivo público.
+3. La CI falla si alguna vez aparece una identidad real en
+   `trader/config.json`.
+
+Lo que **nunca** se publica, porque `.gitignore` lo excluye: el registro de
+decisiones (`trader/state/`), tu cartera, las órdenes, los planes y las
+alertas. Verificado: `trader/state/risk.json` da 404 en la URL pública.
+
+Si algún día prefieres que nada de esto sea público, las dos salidas son poner
+el repositorio en privado o desactivar Pages, las dos en los ajustes de GitHub.
 
 ## Si quieres actualizar desde el original
 
