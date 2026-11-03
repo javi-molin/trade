@@ -33,6 +33,7 @@ uso() {
 Uso:  bin/trader <comando> [opciones]
 
   Preparacion
+    panel                  abre el tablero visual en el navegador
     estado                 comprueba Python, la configuracion y los archivos
     test                   ejecuta la suite completa, sin red (315 pruebas)
     config                 muestra tu trader/config.json
@@ -117,6 +118,27 @@ cmd_test() {
   "$PY" -m unittest discover -s tests "$@"
 }
 
+cmd_panel() {
+  comprobar_python
+  local puerto="${1:-8765}"
+  local url="http://127.0.0.1:$puerto/index.html"
+
+  titulo "Panel de trading"
+  echo "  $url"
+  echo
+  echo "  El panel solo lee los archivos de trader/. No envia nada a ninguna parte"
+  echo "  y no puede colocar ninguna orden."
+  echo
+  echo "  Sirviendo $REPO en 127.0.0.1:$puerto. Ctrl+C para parar."
+  echo
+
+  # Solo escucha en localhost: nunca se expone a la red.
+  for abrir in xdg-open open; do
+    if command -v "$abrir" >/dev/null 2>&1; then ("$abrir" "$url" >/dev/null 2>&1 &) ; break; fi
+  done
+  exec "$PY" -m http.server "$puerto" --bind 127.0.0.1 --directory "$REPO"
+}
+
 # --------------------------------------------------------------- herramientas
 
 run() { comprobar_python; "$PY" "$S/$1" "${@:2}"; }
@@ -147,6 +169,7 @@ EOF
 }
 
 case "${1-ayuda}" in
+  panel|tablero)        shift; cmd_panel "$@" ;;
   estado|status)        shift; cmd_estado "$@" ;;
   test|pruebas)         shift; cmd_test "$@" ;;
   config)               shift; cat trader/config.json ;;

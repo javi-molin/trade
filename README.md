@@ -35,6 +35,23 @@ Te da disciplina, aritmética correcta y un registro. Nada más.
 
 ---
 
+## El panel
+
+Si prefieres ver el proceso en vez de leer salidas de terminal:
+
+```bash
+bin/trader panel
+```
+
+Levanta un servidor local y abre [`index.html`](index.html), un tablero que lee los archivos
+que escriben las herramientas y te muestra dónde estás en el recorrido, el plan actual, las
+probabilidades, la orden propuesta y el veredicto de riesgo. Incluye una calculadora de
+tamaño que funciona sin datos, una checklist antes de dar tu «sí», y un diario para las 30
+sesiones en seco.
+
+El panel **solo lee**: no se conecta a ningún broker, no tiene tus claves y no existe ningún
+botón que envíe una orden. No carga nada de internet, y la CI lo comprueba en cada push.
+
 ## Empezar en 4 pasos
 
 ### 1. Comprueba que todo está en su sitio
@@ -222,6 +239,7 @@ Lo escribo aquí para acordarme cuando se me olvide:
 
 ```
 README.md                    esto
+index.html                   el panel visual (bin/trader panel)
 NOTICE.md                    procedencia, licencia y qué se modificó
 .github/workflows/tests.yml  CI: las 315 pruebas + verificación de integridad
 LICENSE                      MIT, de Jake Schincariol

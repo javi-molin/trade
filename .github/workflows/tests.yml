@@ -71,6 +71,22 @@ jobs:
           print("cuenta de papel, sin opciones, sin margen, sin cortos, stop obligatorio")
           EOF
 
+      - name: Comprobar que el panel no habla con el exterior
+        run: |
+          # index.html promete que no envia nada a ninguna parte. Esto lo verifica:
+          # sin recursos remotos, sin envios, y sin otro fetch que los archivos locales.
+          malo=$(grep -nE "https?://|//cdn\.|<script[^>]+src=|<link[^>]+href=|XMLHttpRequest|sendBeacon|WebSocket|EventSource|new Image\(" index.html || true)
+          if [ -n "$malo" ]; then
+            echo "index.html contiene referencias externas o envios:"
+            echo "$malo"
+            exit 1
+          fi
+          # Todo fetch debe apuntar a la carpeta trader/ del propio repositorio.
+          fetches=$(grep -oE "fetch\([^)]*" index.html || true)
+          echo "$fetches" | grep -vE "fetch\(FILES\[k\]" | grep -q "fetch(" \
+            && { echo "fetch inesperado:"; echo "$fetches"; exit 1; }
+          echo "el panel solo lee archivos locales"
+
       - name: Comprobar que no se cuela ningun secreto
         run: |
           # Busca claves de verdad. Los archivos de ejemplo y la documentacion
