@@ -77,6 +77,7 @@ de trading:
 |---|---|
 | `README.md` | Guía de entrada en español |
 | `NOTICE.md` | Este archivo |
+| `index.html` | Panel visual que lee los archivos de `trader/`. Solo lectura, sin red, sin botones de orden. Se abre con `bin/trader panel` |
 | `bin/trader` | Lanzador con comandos en español. **No puede enviar órdenes:** solo ejecuta las herramientas de lectura y cálculo |
 | `trader/config.json` | Configuración lista para usar, con límites deliberadamente pequeños |
 | `.gitignore` | Para que el registro de operaciones, las claves y los `.env` no acaben publicados |

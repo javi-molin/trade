@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de Trading</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --panel-2:#f0f2f5; --line:#dfe3e8;
+  --ink:#16191d; --ink-2:#51575f; --ink-3:#80868f;
+  --accent:#2f6fd0; --accent-ink:#ffffff;
+  --ok:#12694a; --ok-bg:#e4f3ec; --ok-line:#a9d7c3;
+  --warn:#8a5a00; --warn-bg:#fcf1dc; --warn-line:#e8cb92;
+  --bad:#a52020; --bad-bg:#fbe9e9; --bad-line:#eeb4b4;
+  --mute-bg:#eceef1;
+  --radius:10px; --gut:16px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1115; --panel:#171a20; --panel-2:#1e2229; --line:#2c313a;
+    --ink:#e8eaed; --ink-2:#a8aeb8; --ink-3:#787f8a;
+    --accent:#6ea3ec; --accent-ink:#0f1115;
+    --ok:#6fd3a6; --ok-bg:#12271f; --ok-line:#2c5745;
+    --warn:#e8bd72; --warn-bg:#2a2112; --warn-line:#5a4722;
+    --bad:#f08b8b; --bad-bg:#2a1616; --bad-line:#5e2d2d;
+    --mute-bg:#22262e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --panel:#171a20; --panel-2:#1e2229; --line:#2c313a;
+  --ink:#e8eaed; --ink-2:#a8aeb8; --ink-3:#787f8a;
+  --accent:#6ea3ec; --accent-ink:#0f1115;
+  --ok:#6fd3a6; --ok-bg:#12271f; --ok-line:#2c5745;
+  --warn:#e8bd72; --warn-bg:#2a2112; --warn-line:#5a4722;
+  --bad:#f08b8b; --bad-bg:#2a1616; --bad-line:#5e2d2d;
+  --mute-bg:#22262e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.55; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 var(--gut) 72px}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.25;margin:0}
+h1{font-size:1.5rem;letter-spacing:-.01em}
+h2{font-size:1.12rem;letter-spacing:-.005em}
+h3{font-size:.95rem}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.muted{color:var(--ink-2)}
+.dim{color:var(--ink-3)}
+.small{font-size:.83rem}
+.tiny{font-size:.76rem}
+
+/* ---------- top bar ---------- */
+header{
+  position:sticky;top:0;z-index:30;background:var(--panel);
+  border-bottom:1px solid var(--line);
+}
+.bar{max-width:1120px;margin:0 auto;padding:10px var(--gut);
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;margin-right:auto;min-width:0}
+.brand b{font-size:1.02rem;letter-spacing:-.01em}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);
+  border-radius:999px;padding:3px 10px;font-size:.78rem;font-weight:600;
+}
+.chip.ok{background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok)}
+.chip.warn{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn)}
+.chip.bad{background:var(--bad-bg);border-color:var(--bad-line);color:var(--bad)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+button{font-family:inherit;font-size:.82rem;cursor:pointer}
+.btn{
+  border:1px solid var(--line);background:var(--panel-2);color:var(--ink);
+  border-radius:8px;padding:5px 11px;font-weight:600;
+}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+
+/* ---------- blocks ---------- */
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin:12px 0;
+}
+section{margin-top:28px}
+.sec-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:2px}
+.sec-head .n{
+  font-family:var(--mono);font-size:.72rem;font-weight:700;color:var(--ink-3);
+  border:1px solid var(--line);border-radius:5px;padding:1px 6px;flex:none;
+}
+.lede{color:var(--ink-2);margin:6px 0 0;max-width:68ch}
+
+.notice{border-left:3px solid var(--bad);background:var(--bad-bg);
+  border-radius:var(--radius);padding:14px 16px;margin:16px 0}
+.notice h2{color:var(--bad);font-size:1rem;margin-bottom:6px}
+.notice p{margin:6px 0 0;color:var(--ink)}
+.notice ol{margin:8px 0 0;padding-left:22px}
+.notice li{margin:3px 0}
+
+.info{border:1px solid var(--warn-line);background:var(--warn-bg);
+  border-radius:var(--radius);padding:12px 14px;margin:12px 0;font-size:.88rem}
+
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:860px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+.stat{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:11px 12px}
+.stat .k{font-size:.74rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
+.stat .v{font-family:var(--mono);font-size:1.22rem;font-weight:600;margin-top:3px;word-break:break-word}
+.stat .s{font-size:.76rem;color:var(--ink-2);margin-top:2px}
+.stat.ok .v{color:var(--ok)} .stat.bad .v{color:var(--bad)} .stat.warn .v{color:var(--warn)}
+
+/* ---------- pipeline ---------- */
+.steps{display:grid;gap:10px}
+.step{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:start;
+}
+.step>*{min-width:0}
+.step .num{
+  font-family:var(--mono);font-size:.8rem;font-weight:700;width:26px;height:26px;
+  display:grid;place-items:center;border-radius:50%;background:var(--mute-bg);color:var(--ink-3);
+}
+.step.done{border-color:var(--ok-line)}
+.step.done .num{background:var(--ok-bg);color:var(--ok)}
+.step.blocked{border-color:var(--bad-line)}
+.step.blocked .num{background:var(--bad-bg);color:var(--bad)}
+.step .t{font-weight:650}
+.step .d{font-size:.85rem;color:var(--ink-2);margin-top:1px}
+.step .data{font-family:var(--mono);font-size:.8rem;margin-top:6px;color:var(--ink)}
+.step .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0;max-width:100%}
+@media (max-width:760px){
+  .step{grid-template-columns:28px minmax(0,1fr)}
+  .step .right{grid-column:2;align-items:flex-start;width:100%}
+}
+.cmd{
+  display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:7px;padding:4px 6px 4px 10px;max-width:100%;min-width:0;
+}
+.cmd code{white-space:nowrap;overflow-x:auto;color:var(--ink);min-width:0;flex:1 1 auto;
+  scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.cmd button{border:0;background:transparent;color:var(--ink-3);font-size:.72rem;font-weight:700;
+  padding:2px 6px;border-radius:5px;flex:none}
+.cmd button:hover{color:var(--accent);background:var(--panel)}
+
+/* ---------- ladder ---------- */
+.ladder{display:grid;gap:0;margin:4px 0 0}
+.rung{display:grid;grid-template-columns:92px 1fr auto;gap:10px;align-items:center;
+  padding:7px 0;border-bottom:1px dashed var(--line);font-size:.88rem}
+.rung:last-child{border-bottom:0}
+.rung .lbl{font-weight:650;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+.rung .track{height:8px;background:var(--mute-bg);border-radius:99px;position:relative;overflow:hidden}
+.rung .fill{position:absolute;inset:0 auto 0 0;border-radius:99px}
+.rung .pr{font-family:var(--mono);font-weight:600}
+.rung.t .lbl{color:var(--ok)} .rung.t .fill{background:var(--ok)}
+.rung.e .lbl{color:var(--accent)} .rung.e .fill{background:var(--accent)}
+.rung.s .lbl{color:var(--bad)} .rung.s .fill{background:var(--bad)}
+
+/* ---------- odds bar ---------- */
+.odds{display:flex;height:30px;border-radius:7px;overflow:hidden;border:1px solid var(--line);margin:8px 0 6px}
+.odds div{display:grid;place-items:center;font-size:.76rem;font-weight:700;min-width:0;overflow:hidden}
+.odds .ot{background:var(--ok-bg);color:var(--ok)}
+.odds .os{background:var(--bad-bg);color:var(--bad)}
+.odds .on{background:var(--mute-bg);color:var(--ink-2)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--ink-2)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+
+/* ---------- forms ---------- */
+label{display:block;font-size:.78rem;font-weight:700;color:var(--ink-2);margin-bottom:4px}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;font-family:var(--mono);font-size:.92rem;color:var(--ink);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;
+}
+textarea{font-family:var(--sans);min-height:60px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+.field{margin-bottom:10px}
+
+/* ---------- check list ---------- */
+.checks{display:grid;gap:2px;margin:6px 0 0}
+.check{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;
+  padding:9px 10px;border-radius:7px}
+.check:hover{background:var(--panel-2)}
+.check input{width:17px;height:17px;margin:2px 0 0;accent-color:var(--accent);flex:none}
+.check span{font-size:.9rem}
+.check.on span{color:var(--ink-2);text-decoration:line-through}
+
+/* ---------- table ---------- */
+.tw{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.73rem;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-3)}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+tbody tr:hover{background:var(--panel-2)}
+
+.tag{display:inline-block;font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:999px;
+  background:var(--mute-bg);color:var(--ink-2);margin:1px 3px 1px 0;white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok)}
+.tag.bad{background:var(--bad-bg);color:var(--bad)}
+.tag.warn{background:var(--warn-bg);color:var(--warn)}
+
+details{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);margin:10px 0}
+details>summary{cursor:pointer;padding:12px 16px;font-weight:650;list-style:none}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸ ";color:var(--ink-3)}
+details[open]>summary::before{content:"▾ "}
+details>summary:hover{color:var(--accent)}
+.dbody{padding:0 16px 16px;border-top:1px solid var(--line);margin-top:0;padding-top:12px}
+
+.empty{color:var(--ink-3);font-size:.88rem;padding:10px 0}
+.reasons{margin:6px 0 0;padding-left:20px;font-size:.86rem}
+.reasons li{margin:3px 0}
+ul.plain{list-style:none;padding:0;margin:8px 0 0}
+ul.plain li{padding:5px 0;border-bottom:1px dashed var(--line);font-size:.88rem}
+ul.plain li:last-child{border-bottom:0}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);
+  color:var(--ink-2);font-size:.82rem}
+.bigq{font-family:var(--mono);font-size:1.9rem;font-weight:700;letter-spacing:-.02em}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <b>Panel de Trading</b>
+      <span class="tiny dim" id="repoNote">lee lo que escriben las once herramientas</span>
+    </div>
+    <div class="chips" id="chips"></div>
+    <button class="btn" id="reload" title="Volver a leer los archivos">Actualizar</button>
+    <button class="btn" id="theme" title="Claro / oscuro">Tema</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="notice">
+    <h2>Esta página no puede comprar ni vender nada</h2>
+    <p>Es un <b>tablero de lectura</b>: muestra lo que las herramientas han calculado y te
+    guía por el orden correcto. No se conecta a ningún broker, no tiene tus claves y no
+    existe ningún botón que mande una orden. Eso es a propósito.</p>
+    <p class="small" style="margin-top:10px"><b>Una orden solo llega al mercado si pasan estas tres cosas, cada vez:</b></p>
+    <ol class="small">
+      <li>El gestor de riesgo aprueba <b>esa orden exacta</b> ese mismo día.</li>
+      <li>Tú escribes «sí» en el chat de Claude, para <b>esa sola orden</b>.</li>
+      <li>Tú pulsas <b>«Allow once»</b> en la tarjeta de permisos de Claude.</li>
+    </ol>
+  </div>
+
+  <div id="loadWarn"></div>
+
+  <!-- ========== 0. PRIMERA VEZ ========== -->
+  <section id="s0">
+    <details id="firstTime">
+      <summary>¿Es la primera vez? Empieza por aquí (5 minutos de lectura)</summary>
+      <div class="dbody">
+        <p class="lede" style="margin-top:0">Nunca has operado. Lo más valioso que puedes
+        hacer hoy no es operar: es recorrer el proceso completo <b>sin conectar ningún
+        broker</b> y apuntar qué habría pasado. Cuesta cero y te enseña lo mismo.</p>
+
+        <div class="grid g2" style="margin-top:14px">
+          <div class="card" style="margin:0">
+            <h3>Los cuatro números que importan</h3>
+            <ul class="plain">
+              <li><b>Entrada</b> — el precio al que compras.</li>
+              <li><b>Stop</b> — el precio al que admites que te equivocaste y sales. Va <b>debajo</b> de la entrada.</li>
+              <li><b>Objetivo</b> — el precio al que recoges la ganancia. Va <b>encima</b>.</li>
+              <li><b>R</b> — tu unidad de riesgo: entrada menos stop, por acción. Todo se mide en R.</li>
+            </ul>
+            <p class="small muted" style="margin-top:10px">Si el objetivo está a 2R, ganas el
+            doble de lo que arriesgas cuando aciertas. Por eso un 40 % de acierto a 2R gana
+            dinero y un 55 % a 0,5R lo pierde.</p>
+          </div>
+          <div class="card" style="margin:0">
+            <h3>Las tres reglas que no se negocian</h3>
+            <ul class="plain">
+              <li><b>1.</b> El stop se decide <b>antes</b> de entrar, nunca después.</li>
+              <li><b>2.</b> El stop no se mueve a peor. Nunca. Un stop movido no es un stop.</li>
+              <li><b>3.</b> Si el control de riesgo dice BLOCK, el día acabó para esa idea.
+              No se edita la configuración para que pase.</li>
+            </ul>
+            <p class="small muted" style="margin-top:10px">La tercera es la que de verdad te
+            protege, y la que más cuesta cumplir. Ese impulso de editar los límites para que
+            te dejen hacer lo que ya habías decidido es exactamente lo que este repositorio
+            existe para frenar.</p>
+          </div>
+        </div>
+
+        <h3 style="margin-top:18px">Preparar el panel (una vez)</h3>
+        <p class="small muted">El panel necesita leer archivos de la carpeta <code>trader/</code>,
+        y los navegadores no dejan hacerlo abriendo el archivo directamente. Arráncalo así,
+        desde la raíz del repositorio:</p>
+        <div class="cmd" style="max-width:420px"><code>bin/trader panel</code><button data-copy="bin/trader panel">copiar</button></div>
+        <p class="small muted" style="margin-top:8px">Eso levanta un servidor local y te da la
+        dirección. Mientras no hayas ejecutado ninguna herramienta, el panel se verá vacío:
+        es lo normal.</p>
+
+        <h3 style="margin-top:18px">La verdad incómoda, una vez y bien dicha</h3>
+        <p class="small">La mayoría de quienes hacen day trading pierden dinero. Este
+        repositorio no te da ninguna ventaja sobre el mercado: los patrones que busca
+        (ruptura del rango de apertura, banderas, rebote de sobreventa) son los más conocidos
+        y explotados del trading minorista. Lo que te da es <b>disciplina, aritmética
+        correcta y un registro</b>. Si después de 30 sesiones en seco tu registro está en
+        negativo, has obtenido el mejor resultado posible de todo esto: saberlo gratis.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ========== 1. RECORRIDO ========== -->
+  <section id="s1">
+    <div class="sec-head"><span class="n">1</span><h2>Dónde estás</h2></div>
+    <p class="lede">El orden no es decorativo: cada paso lee el archivo que escribió el
+    anterior. Copia el comando, ejecútalo en tu terminal y pulsa «Actualizar» arriba.</p>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <!-- ========== 2. PLAN ========== -->
+  <section id="s2">
+    <div class="sec-head"><span class="n">2</span><h2>El plan actual</h2></div>
+    <p class="lede">Lo que escribió <code>bin/trader salida</code>. Si esto está vacío,
+    todavía no tienes un plan, y sin plan no hay nada que arriesgar.</p>
+    <div id="plan"></div>
+  </section>
+
+  <!-- ========== 3. PROBABILIDADES ========== -->
+  <section id="s3">
+    <div class="sec-head"><span class="n">3</span><h2>Las probabilidades honestas</h2></div>
+    <p class="lede">Lo que escribió <code>bin/trader simular</code>: 10.000 sesiones
+    recreadas con las propias velas del valor, más todas las veces que el setup se activó de
+    verdad en los últimos 60 días.</p>
+    <div id="sim"></div>
+  </section>
+
+  <!-- ========== 4. ORDEN Y RIESGO ========== -->
+  <section id="s4">
+    <div class="sec-head"><span class="n">4</span><h2>La orden propuesta y el veredicto</h2></div>
+    <p class="lede">Una propuesta no es una orden. Mientras el veredicto no sea PASS, no hay
+    nada que llevar al chat.</p>
+    <div id="risk"></div>
+  </section>
+
+  <!-- ========== 5. CALCULADORA ========== -->
+  <section id="s5">
+    <div class="sec-head"><span class="n">5</span><h2>Calculadora de tamaño</h2></div>
+    <p class="lede">Funciona sin datos y sin conexión: es aritmética. Juega con los números
+    hasta que entiendas cómo tu pérdida máxima decide cuántas acciones puedes comprar.
+    <b>No sustituye a <code>bin/trader tamano</code> ni a <code>riesgo</code></b>, que son
+    los que cuentan.</p>
+    <div class="card">
+      <div class="grid g4">
+        <div class="field"><label for="cBudget">Presupuesto ($)</label><input type="number" id="cBudget" step="100" min="0"></div>
+        <div class="field"><label for="cLoss">Pérdida máx. por operación ($)</label><input type="number" id="cLoss" step="1" min="0"></div>
+        <div class="field"><label for="cEntry">Entrada ($)</label><input type="number" id="cEntry" step="0.01" min="0"></div>
+        <div class="field"><label for="cStop">Stop ($)</label><input type="number" id="cStop" step="0.01" min="0"></div>
+      </div>
+      <div class="grid g4">
+        <div class="field"><label for="cTarget">Objetivo ($)</label><input type="number" id="cTarget" step="0.01" min="0"></div>
+        <div class="field"><label for="cPos">Tope de posición (% del presupuesto)</label><input type="number" id="cPos" step="1" min="0" max="100"></div>
+        <div class="field"><label for="cMaxOrder">Orden máxima ($)</label><input type="number" id="cMaxOrder" step="50" min="0"></div>
+        <div class="field"><label for="cBuffer">Colchón de efectivo (%)</label><input type="number" id="cBuffer" step="1" min="0" max="100"></div>
+      </div>
+      <hr>
+      <div id="calcOut"></div>
+    </div>
+  </section>
+
+  <!-- ========== 6. CHECKLIST ========== -->
+  <section id="s6">
+    <div class="sec-head"><span class="n">6</span><h2>Antes de dar tu «sí»</h2><span class="chip" id="ckCount">0 / 10</span></div>
+    <p class="lede">Repasa esto en voz alta. Marcar las casillas no autoriza nada ni se
+    envía a ninguna parte: se guarda solo en este navegador y se reinicia cada día.</p>
+    <div class="card"><div class="checks" id="checks"></div>
+      <div id="ckVerdict" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- ========== 7. DIARIO ========== -->
+  <section id="s7">
+    <div class="sec-head"><span class="n">7</span><h2>Diario de sesiones en seco</h2></div>
+    <p class="lede">El consejo más valioso del repositorio: recorre el proceso completo
+    <b>30 sesiones sin conectar ningún broker</b> y apunta aquí qué habría pasado. Es gratis,
+    y es la única forma de saber si esto funciona para ti antes de que cueste dinero.</p>
+
+    <div class="grid g4" id="journalStats"></div>
+
+    <details>
+      <summary>Apuntar una operación</summary>
+      <div class="dbody">
+        <div class="grid g4">
+          <div class="field"><label for="jDate">Fecha</label><input type="date" id="jDate"></div>
+          <div class="field"><label for="jSym">Valor</label><input type="text" id="jSym" placeholder="TSLA" maxlength="8"></div>
+          <div class="field"><label for="jSetup">Setup</label>
+            <select id="jSetup">
+              <option value="orb">ruptura del rango de apertura</option>
+              <option value="flag">bandera</option>
+              <option value="bounce">rebote de sobreventa</option>
+              <option value="other">otro</option>
+            </select></div>
+          <div class="field"><label for="jOut">Resultado</label>
+            <select id="jOut">
+              <option value="target">objetivo</option>
+              <option value="stop">stop</option>
+              <option value="close">ninguno (cierre)</option>
+              <option value="skipped">no la tomé</option>
+            </select></div>
+        </div>
+        <div class="grid g3">
+          <div class="field"><label for="jEntry">Entrada ($)</label><input type="number" id="jEntry" step="0.01"></div>
+          <div class="field"><label for="jStop">Stop ($)</label><input type="number" id="jStop" step="0.01"></div>
+          <div class="field"><label for="jTarget">Objetivo ($)</label><input type="number" id="jTarget" step="0.01"></div>
+        </div>
+        <div class="field"><label for="jNote">Notas: qué viste, qué sentiste, qué harías distinto</label>
+          <textarea id="jNote" placeholder="Entré tarde porque dudé. El stop estaba bien puesto."></textarea></div>
+        <div class="row">
+          <button class="btn primary" id="jAdd">Apuntar</button>
+          <button class="btn" id="jPrefill">Rellenar desde el plan actual</button>
+        </div>
+      </div>
+    </details>
+
+    <div id="journal"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="jCsv">Exportar a CSV</button>
+      <button class="btn" id="jClear">Borrar el diario</button>
+    </div>
+  </section>
+
+  <!-- ========== 8. GLOSARIO ========== -->
+  <section id="s8">
+    <div class="sec-head"><span class="n">8</span><h2>Glosario</h2></div>
+    <details>
+      <summary>Las palabras que vas a encontrar</summary>
+      <div class="dbody"><div class="tw" id="glossary"></div></div>
+    </details>
+    <details>
+      <summary>Lo que este panel no puede arreglar</summary>
+      <div class="dbody">
+        <ul class="plain">
+          <li><b>Los datos son frágiles.</b> El endpoint de gráficos de Yahoo no es una API
+          oficial: puede retrasarse, cambiar o limitarte sin avisar. Lee velas de 1 y 5
+          minutos, no ticks. Contrasta con tu broker cualquier cosa que importe.</li>
+          <li><b>La simulación no es una predicción.</b> Sortea velas pasadas de forma
+          independiente, lo que destruye la tendencia y la agrupación de volatilidad reales.
+          No sabe nada de resultados trimestrales, halts ni gaps.</li>
+          <li><b>Un stop es un plan, no una garantía.</b> En un mercado rápido o en un gap se
+          ejecuta mucho peor que su precio. La pérdida máxima que ves es la pérdida <i>al
+          precio del stop</i>.</li>
+          <li><b>Ninguna ventaja estadística.</b> Los patrones que busca son los más
+          conocidos del trading minorista.</li>
+          <li><b>Solo mercado de EE.UU.</b> NYSE/Nasdaq, SEC, festivos de EE.UU., hora de
+          Nueva York. Para acciones europeas no sirve.</li>
+          <li><b>Un modelo de lenguaje en el bucle añade un modo de fallo.</b> Si Claude lee
+          mal un número al montar el ticket, los tres filtros ayudan, pero el último filtro
+          eres tú, leyendo con prisa en mitad de la sesión.</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    <p><b>Esto no es asesoramiento financiero.</b> Es software que lee datos públicos y hace
+    aritmética. No conoce tu situación y no puede ver el futuro. Un PASS del gestor de riesgo
+    es una comprobación de reglas, no una recomendación. La mayoría de quienes hacen day
+    trading pierden dinero.</p>
+    <p class="tiny dim">Panel local. No envía nada a ningún servidor: solo lee archivos de la
+    carpeta <code>trader/</code> de este repositorio. Las casillas y el diario se guardan
+    únicamente en este navegador. Guía completa en <code>docs/COMO-OPERAR.md</code>.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ===================== utilidades ===================== */
+const $ = (s, r) => (r || document).querySelector(s);
+const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x != null) n.textContent = x; return n; };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+const isNum = v => typeof v === "number" && isFinite(v);
+const money = v => isNum(v) ? "$" + v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—";
+const money0 = v => isNum(v) ? "$" + v.toLocaleString("es-ES", { maximumFractionDigits: 0 }) : "—";
+const pc1 = v => isNum(v) ? (v * 100).toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " %" : "—";
+const r2 = v => isNum(v) ? v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—";
+
+function store(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* modo privado */ } }
+
+/* ===================== tema ===================== */
+(function () {
+  const t = store("panel.theme", null);
+  if (t) document.documentElement.dataset.theme = t;
+  $("#theme").addEventListener("click", () => {
+    const cur = document.documentElement.dataset.theme;
+    const dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    const next = dark ? "light" : "dark";
+    document.documentElement.dataset.theme = next; save("panel.theme", next);
+  });
+})();
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-copy]");
+  if (!b) return;
+  const txt = b.getAttribute("data-copy"), old = b.textContent;
+  const done = ok => { b.textContent = ok ? "copiado" : "copia a mano"; setTimeout(() => { b.textContent = old; }, 1400); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(() => done(true), () => done(false));
+  } else done(false);
+});
+
+/* ===================== reloj de Nueva York ===================== */
+const NYSE_HOLIDAYS = {
+  "2026-01-01": "Año Nuevo", "2026-01-19": "Martin Luther King, Jr.",
+  "2026-02-16": "Washington", "2026-04-03": "Viernes Santo",
+  "2026-05-25": "Memorial Day", "2026-06-19": "Juneteenth",
+  "2026-07-03": "Independencia (observado)", "2026-09-07": "Labor Day",
+  "2026-11-26": "Thanksgiving", "2026-12-25": "Navidad",
+  "2027-01-01": "Año Nuevo", "2027-01-18": "Martin Luther King, Jr.",
+  "2027-02-15": "Washington", "2027-03-26": "Viernes Santo",
+  "2027-05-31": "Memorial Day", "2027-06-18": "Juneteenth (observado)",
+  "2027-07-05": "Independencia (observado)", "2027-09-06": "Labor Day",
+  "2027-11-25": "Thanksgiving", "2027-12-24": "Navidad (observado)"
+};
+const NYSE_EARLY = { "2026-11-27": "día después de Thanksgiving", "2026-12-24": "Nochebuena", "2027-11-26": "día después de Thanksgiving" };
+
+/* Hora de Nueva York sin depender de zonas horarias del navegador. */
+function nthSunday(y, m, n) { const d = new Date(Date.UTC(y, m - 1, 1)); let c = 0;
+  while (true) { if (d.getUTCDay() === 0) { c++; if (c === n) return new Date(d); } d.setUTCDate(d.getUTCDate() + 1); } }
+function etOffset(utc) {               // -4 en horario de verano, -5 el resto
+  const y = utc.getUTCFullYear();
+  const start = nthSunday(y, 3, 2); start.setUTCHours(7);   // 2:00 ET
+  const end = nthSunday(y, 11, 1); end.setUTCHours(6);
+  return (utc >= start && utc < end) ? -4 : -5;
+}
+function etParts() {
+  const u = new Date(), off = etOffset(u);
+  const t = new Date(u.getTime() + off * 3600000 + u.getTimezoneOffset() * 60000);
+  const iso = t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
+  return { date: iso, h: t.getHours(), m: t.getMinutes(), dow: t.getDay(),
+           hhmm: String(t.getHours()).padStart(2, "0") + ":" + String(t.getMinutes()).padStart(2, "0") };
+}
+function marketState() {
+  const p = etParts(), min = p.h * 60 + p.m;
+  if (p.dow === 0 || p.dow === 6) return { cls: "", txt: "Mercado cerrado (fin de semana)" };
+  if (NYSE_HOLIDAYS[p.date]) return { cls: "", txt: "Cerrado: " + NYSE_HOLIDAYS[p.date] };
+  const close = NYSE_EARLY[p.date] ? 13 * 60 : 16 * 60;
+  if (min < 9 * 60 + 30) return { cls: "warn", txt: "Pre-mercado · abre a las 09:30" };
+  if (min >= close) return { cls: "", txt: "Mercado cerrado" };
+  const extra = NYSE_EARLY[p.date] ? " · cierre temprano 13:00" : "";
+  return { cls: "ok", txt: "Mercado abierto" + extra };
+}
+
+/* ===================== carga de datos ===================== */
+const FILES = {
+  config: "trader/config.json", watchlist: "trader/watchlist.json",
+  entry: "trader/entry.json", plan: "trader/plan.json",
+  sim: "trader/timemachine.json", orders: "trader/orders.json",
+  risk: "trader/state/risk.json", broker: "trader/state/broker.json",
+  alerts: "trader/alerts.json", prices: "trader/prices.json",
+  portfolio: "trader/portfolio.json"
+};
+const D = {};
+let loadFailed = false;
+
+async function loadAll() {
+  loadFailed = false;
+  await Promise.all(Object.keys(FILES).map(async k => {
+    try {
+      const r = await fetch(FILES[k] + "?t=" + Date.now(), { cache: "no-store" });
+      D[k] = r.ok ? await r.json() : null;
+    } catch (e) { D[k] = null; loadFailed = true; }
+  }));
+  render();
+}
+
+/* ===================== cabecera ===================== */
+function renderChips() {
+  const c = $("#chips"); c.innerHTML = "";
+  const add = (cls, txt, dot) => {
+    const n = el("span", "chip" + (cls ? " " + cls : ""));
+    if (dot) n.appendChild(el("span", "dot"));
+    n.appendChild(document.createTextNode(txt)); c.appendChild(n); return n;
+  };
+  const cfg = D.config;
+  if (cfg) {
+    const paper = cfg.paper !== false;
+    add(paper ? "ok" : "bad", paper ? "Cuenta de papel" : "DINERO REAL", true);
+  } else add("warn", "Sin configuración", true);
+  const ms = marketState();
+  add(ms.cls, ms.txt, true);
+  const p = etParts();
+  add("", p.hhmm + " Nueva York");
+  if (cfg && isNum(cfg.budget)) add("", money0(cfg.budget) + " · " + money0(cfg.max_loss_per_trade_usd) + "/op.");
+}
+
+function renderLoadWarn() {
+  const box = $("#loadWarn"); box.innerHTML = "";
+  // La configuracion viene en el repositorio, asi que no cuenta como "hay datos":
+  // lo que importa es si alguna herramienta ha escrito ya su resultado.
+  const nothing = !D.watchlist && !D.entry && !D.plan && !D.sim && !D.orders && !D.risk;
+  if (location.protocol === "file:") {
+    box.innerHTML = '<div class="info"><b>Estás abriendo el panel como archivo.</b> Los navegadores no permiten '
+      + 'leer la carpeta <code>trader/</code> así, por lo que el panel se verá vacío. Arráncalo desde la raíz del '
+      + 'repositorio con <code>bin/trader panel</code> y abre la dirección que te dé.</div>';
+    return;
+  }
+  if (nothing) {
+    box.innerHTML = '<div class="info"><b>Todavía no hay datos, y eso es lo normal el primer día.</b> '
+      + 'Nada se rompió: simplemente no has ejecutado ninguna herramienta. Empieza por el paso 1 de '
+      + '«Dónde estás» y pulsa «Actualizar» cuando termines cada comando. La calculadora, la checklist y '
+      + 'el diario funcionan ya, sin datos.</div>';
+  }
+}
+
+/* ===================== 1. recorrido ===================== */
+const todayET = () => etParts().date;
+
+function stepState(key) {
+  // -> {state:"vacio"|"listo"|"viejo"|"problema", note, data}
+  const t = todayET();
+  switch (key) {
+    case "universo": {
+      const w = D.watchlist;
+      if (!w) return { state: "vacio" };
+      return { state: "listo", data: (w.universe || 0).toLocaleString("es-ES") + " valores en el universo" };
+    }
+    case "escanear": {
+      const w = D.watchlist;
+      if (!w) return { state: "vacio" };
+      const n = (w.hits || []).length;
+      const old = w.created_at && w.created_at.slice(0, 10) !== t;
+      return { state: n ? (old ? "viejo" : "listo") : "vacio",
+               data: n + " candidato" + (n === 1 ? "" : "s") + (w.as_of ? " · " + w.as_of : ""),
+               note: old ? "este escaneo no es de hoy" : null };
+    }
+    case "noticias": return { state: "vacio", note: "se comprueba en el chat o en la terminal" };
+    case "entrada": {
+      const e = D.entry;
+      if (!e) return { state: "vacio" };
+      const st = e.status === "triggered" ? "listo" : "vacio";
+      const w = { triggered: "activado", waiting: "esperando", expired: "expirado" }[e.status] || e.status;
+      return { state: st, data: (e.symbol || "") + ": " + w + (isNum(e.price) ? " a " + money(e.price) : ""),
+               note: e.date !== t ? "es del " + e.date : null };
+    }
+    case "salida": {
+      const p = D.plan;
+      if (!p) return { state: "vacio" };
+      return { state: "listo", data: p.symbol + " · entrada " + money(p.entry) + " · stop " + money(p.stop) + " · obj. " + money(p.target),
+               note: p.date !== t ? "este plan es del " + p.date + ", no de hoy" : null };
+    }
+    case "simular": {
+      const s = D.sim;
+      if (!s || !s.mc) return { state: "vacio" };
+      const bad = isNum(s.mc.avg_R) && s.mc.avg_R <= 0;
+      return { state: bad ? "problema" : "listo",
+               data: "objetivo " + pc1(s.mc.p_target) + " · stop " + pc1(s.mc.p_stop) + " · R medio " + r2(s.mc.avg_R),
+               note: bad ? "R medio negativo: la simulación dice que no vale la pena" : null };
+    }
+    case "tamano": {
+      const o = D.orders;
+      if (!o || !(o.orders || []).length) return { state: "vacio" };
+      const f = o.orders[0];
+      return { state: "listo", data: (f.qty || f.notional) + " " + f.symbol + (f.plan && isNum(f.plan.max_loss) ? " · riesgo " + money(f.plan.max_loss) : "") };
+    }
+    case "riesgo": {
+      const r = D.risk;
+      if (!r) return { state: "vacio" };
+      if (r.date !== t) return { state: "viejo", data: "última comprobación: " + r.date, note: "hay que volver a comprobar hoy" };
+      if (r.block) return { state: "problema", data: r.block + " bloqueada" + (r.block === 1 ? "" : "s") + ", " + r["pass"] + " aprobada" + (r["pass"] === 1 ? "" : "s") };
+      return { state: "listo", data: r["pass"] + " orden" + (r["pass"] === 1 ? "" : "es") + " con PASS" };
+    }
+    case "ticket": {
+      const r = D.risk, b = D.broker;
+      const decided = ((b && b.orders) || []).filter(x => String(x.date || "").slice(0, 10) === t);
+      if (decided.length) return { state: "listo", data: decided.length + " decisión(es) registrada(s) hoy" };
+      if (r && r.date === t && r["pass"] > 0 && !r.block) return { state: "listo", data: "hay un ticket READY esperando tu decisión" };
+      return { state: "vacio" };
+    }
+    case "alertas": {
+      const a = D.alerts;
+      const n = ((a && a.rules) || []).length;
+      return n ? { state: "listo", data: n + " alerta" + (n === 1 ? "" : "s") + " puesta" + (n === 1 ? "" : "s") } : { state: "vacio" };
+    }
+  }
+  return { state: "vacio" };
+}
+
+const STEPS = [
+  { k: "universo", t: "Construir el universo", cmd: "bin/trader universo",
+    d: "Una vez al día, antes de abrir. Descarga la lista de acciones de EE.UU.",
+    look: "No tienes que mirar nada: es preparación." },
+  { k: "escanear", t: "Buscar candidatos", cmd: "bin/trader escanear --at 10:15",
+    d: "Qué ha roto su rango de apertura hasta esa hora.",
+    look: "Muchos candidatos no es buena señal: significa que todo el mercado sube a la vez." },
+  { k: "noticias", t: "Entender por qué se mueve", cmd: "bin/trader noticias TSLA",
+    d: "Titulares, 8-K y el movimiento de hoy.",
+    look: "Si no hay razón detrás del movimiento, es ruido. Si la razón son resultados esta semana, déjalo." },
+  { k: "entrada", t: "Confirmar que el setup está activado", cmd: "bin/trader entrada TSLA",
+    d: "Esperando, activado o expirado.",
+    look: "«Esperando» significa esperando. No lo fuerces." },
+  { k: "salida", t: "Fijar stop y objetivo ANTES de entrar", cmd: "bin/trader salida --stop or-mid --target 2R",
+    d: "Escribe el plan: entrada, stop, objetivo y hora de cierre.",
+    look: "Este paso no se salta nunca. Sin stop no sabes cuánto arriesgas." },
+  { k: "simular", t: "Ver las probabilidades", cmd: "bin/trader simular",
+    d: "10.000 replays más el histórico real del setup.",
+    look: "Si el R medio no es claramente positivo, no operes. Ese es el punto de mirar." },
+  { k: "tamano", t: "Calcular el tamaño", cmd: "bin/trader tamano",
+    d: "Cuántas acciones caben en tu pérdida máxima.",
+    look: "No redondees hacia arriba. Si salen 3 acciones, son 3 acciones." },
+  { k: "riesgo", t: "Pasar el control de riesgo", cmd: "bin/trader riesgo",
+    d: "PASS o BLOCK de cada orden contra tus límites.",
+    look: "Si dice BLOCK, el día acabó para esa idea. No edites la configuración." },
+  { k: "ticket", t: "Leer el ticket y decidir tú", cmd: "bin/trader ticket",
+    d: "Luego, en el chat de Claude: /trader-broker",
+    look: "Claude te enseña el ticket, tú escribes «sí» y después pulsas «Allow once»." },
+  { k: "alertas", t: "Poner las alertas", cmd: "bin/trader alertas-crear",
+    d: "Stop, objetivo y cierre obligatorio a tu hora de flat-by.",
+    look: "Las alertas son tu red de seguridad, no el mecanismo: el bracket está en el broker." }
+];
+
+function renderSteps() {
+  const box = $("#steps"); box.innerHTML = "";
+  STEPS.forEach((s, i) => {
+    const st = stepState(s.k);
+    const n = el("div", "step" + (st.state === "listo" ? " done" : st.state === "problema" ? " blocked" : ""));
+    n.appendChild(el("div", "num", st.state === "listo" ? "✓" : String(i + 1)));
+
+    const mid = el("div");
+    mid.appendChild(el("div", "t", s.t));
+    mid.appendChild(el("div", "d", s.d));
+    if (st.data) mid.appendChild(el("div", "data", st.data));
+    if (st.note) { const w = el("div", "small"); w.style.color = "var(--warn)"; w.style.marginTop = "4px"; w.textContent = "⚠ " + st.note; mid.appendChild(w); }
+    const look = el("div", "tiny dim"); look.style.marginTop = "5px"; look.textContent = s.look; mid.appendChild(look);
+    n.appendChild(mid);
+
+    const right = el("div", "right");
+    const cmd = el("div", "cmd");
+    const code = el("code", null, s.cmd); cmd.appendChild(code);
+    const cp = el("button", null, "copiar"); cp.setAttribute("data-copy", s.cmd); cmd.appendChild(cp);
+    right.appendChild(cmd);
+    const badge = { listo: ["ok", "hecho"], problema: ["bad", "atención"], viejo: ["warn", "no es de hoy"], vacio: ["", "pendiente"] }[st.state];
+    const tg = el("span", "tag" + (badge[0] ? " " + badge[0] : ""), badge[1]); right.appendChild(tg);
+    n.appendChild(right);
+    box.appendChild(n);
+  });
+}
+
+/* ===================== 2. plan ===================== */
+function renderPlan() {
+  const box = $("#plan"); box.innerHTML = "";
+  const p = D.plan;
+  if (!p) { box.innerHTML = '<div class="card"><div class="empty">Sin plan todavía. Ejecuta '
+    + '<code>bin/trader salida</code> cuando tengas una entrada confirmada.</div></div>'; return; }
+
+  const card = el("div", "card");
+  const head = el("div", "row"); head.style.marginBottom = "12px";
+  const h = el("h3", null, (p.symbol || "?") + " · " + (p.side === "buy" ? "compra" : p.side) + " · " + (p.setup || ""));
+  h.style.fontSize = "1.05rem"; head.appendChild(h);
+  if (p.date !== todayET()) head.appendChild(el("span", "tag warn", "plan del " + p.date));
+  card.appendChild(head);
+
+  // escalera de precios
+  const vals = [p.target, p.entry, p.stop].filter(isNum);
+  const lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), span = (hi - lo) || 1;
+  const ladder = el("div", "ladder");
+  [["t", "Objetivo", p.target, p.target_label], ["e", "Entrada", p.entry, p.entry_time ? "a las " + p.entry_time : ""],
+   ["s", "Stop", p.stop, p.stop_label]].forEach(([cls, lbl, v, sub]) => {
+    const r = el("div", "rung " + cls);
+    r.appendChild(el("div", "lbl", lbl));
+    const tr = el("div", "track"); const f = el("div", "fill");
+    f.style.width = isNum(v) ? Math.max(4, ((v - lo) / span) * 100) + "%" : "0";
+    tr.appendChild(f); r.appendChild(tr);
+    const pr = el("div", "pr", money(v)); r.appendChild(pr);
+    ladder.appendChild(r);
+    if (sub) { const s = el("div", "tiny dim", sub); s.style.gridColumn = "2 / -1"; s.style.marginTop = "-4px"; ladder.appendChild(s); }
+  });
+  card.appendChild(ladder);
+
+  const g = el("div", "grid g4"); g.style.marginTop = "14px";
+  const stat = (k, v, s, cls) => { const n = el("div", "stat" + (cls ? " " + cls : ""));
+    n.appendChild(el("div", "k", k)); n.appendChild(el("div", "v", v)); if (s) n.appendChild(el("div", "s", s)); return n; };
+  g.appendChild(stat("Riesgo por acción", money(p.risk_per_share), "entrada menos stop"));
+  const rr = p.reward_risk;
+  const minrr = D.config && D.config.min_reward_risk;
+  const rrBad = isNum(rr) && isNum(minrr) && rr < minrr;
+  g.appendChild(stat("Beneficio : riesgo", isNum(rr) ? r2(rr) + " : 1" : "—",
+    isNum(minrr) ? "tu mínimo es " + r2(minrr) : "", rrBad ? "bad" : "ok"));
+  g.appendChild(stat("Objetivo en R", isNum(p.target_r) ? r2(p.target_r) + "R" : "—", p.target_label || ""));
+  g.appendChild(stat("Cierre obligatorio", p.flat_by || "—", "hora de Nueva York", "warn"));
+  card.appendChild(g);
+
+  if (rrBad) {
+    const w = el("div", "info"); w.innerHTML = "<b>El beneficio:riesgo está por debajo de tu mínimo.</b> "
+      + "El control de riesgo va a bloquear esta orden, y hace bien. Busca otro candidato en vez de bajar el mínimo.";
+    card.appendChild(w);
+  }
+  if (p.stop_detail) card.appendChild(el("p", "small muted", "Stop: " + p.stop_detail));
+  box.appendChild(card);
+}
+
+/* ===================== 3. simulación ===================== */
+function renderSim() {
+  const box = $("#sim"); box.innerHTML = "";
+  const s = D.sim;
+  if (!s || !s.mc) { box.innerHTML = '<div class="card"><div class="empty">Sin simulación todavía. '
+    + 'Ejecuta <code>bin/trader simular</code> una vez tengas un plan.</div></div>'; return; }
+  const m = s.mc, h = s.history || {};
+  const card = el("div", "card");
+
+  const pt = m.p_target || 0, ps = m.p_stop || 0, pn = m.p_neither || 0;
+  const bar = el("div", "odds");
+  [["ot", pt, "objetivo"], ["os", ps, "stop"], ["on", pn, "ninguno"]].forEach(([c, v, lbl]) => {
+    const d = el("div", c); d.style.flex = String(Math.max(v, 0.0001));
+    d.textContent = v >= 0.12 ? pc1(v) : ""; d.title = lbl + ": " + pc1(v); bar.appendChild(d);
+  });
+  card.appendChild(bar);
+  const lg = el("div", "legend");
+  lg.innerHTML = '<span><i style="background:var(--ok)"></i>Objetivo primero ' + pc1(pt) + '</span>'
+    + '<span><i style="background:var(--bad)"></i>Stop primero ' + pc1(ps) + '</span>'
+    + '<span><i style="background:var(--ink-3)"></i>Ninguno al cierre ' + pc1(pn) + '</span>';
+  card.appendChild(lg);
+
+  const avg = m.avg_R;
+  const g = el("div", "grid g4"); g.style.marginTop = "14px";
+  const stat = (k, v, sub, cls) => { const n = el("div", "stat" + (cls ? " " + cls : ""));
+    n.appendChild(el("div", "k", k)); n.appendChild(el("div", "v", v)); if (sub) n.appendChild(el("div", "s", sub)); return n; };
+  g.appendChild(stat("R medio por operación", isNum(avg) ? (avg > 0 ? "+" : "") + r2(avg) + "R" : "—",
+    "esperanza de la simulación", isNum(avg) ? (avg > 0.05 ? "ok" : avg <= 0 ? "bad" : "warn") : ""));
+  g.appendChild(stat("Replays", (m.replays || 0).toLocaleString("es-ES"), "semilla " + (m.seed != null ? m.seed : "?")));
+  g.appendChild(stat("Sesiones usadas", String(m.pool_sessions || "—"),
+    m.pool_from && m.pool_to ? m.pool_from + " → " + m.pool_to : ""));
+  g.appendChild(stat("El setup se activó", isNum(h.triggered) ? h.triggered + " veces" : "—",
+    isNum(h.sessions) ? "en " + h.sessions + " sesiones reales" : ""));
+  card.appendChild(g);
+
+  if (isNum(h.triggered) && h.triggered > 0) {
+    const g2 = el("div", "grid g4"); g2.style.marginTop = "12px";
+    g2.appendChild(stat("Histórico: objetivo", String(h.target), "veces", "ok"));
+    g2.appendChild(stat("Histórico: stop", String(h.stop), "veces", "bad"));
+    g2.appendChild(stat("Histórico: ninguno", String(h.close), "veces"));
+    g2.appendChild(stat("Histórico: R medio", isNum(h.avg_R) ? (h.avg_R > 0 ? "+" : "") + r2(h.avg_R) + "R" : "—",
+      "sobre operaciones reales", isNum(h.avg_R) ? (h.avg_R > 0 ? "ok" : "bad") : ""));
+    card.appendChild(g2);
+  }
+
+  // lectura en claro
+  const read = el("div", isNum(avg) && avg <= 0 ? "notice" : "info");
+  read.style.marginTop = "14px";
+  if (isNum(avg) && avg <= 0) {
+    read.innerHTML = '<h2>La simulación dice que no operes esto</h2><p>El R medio es '
+      + esc(r2(avg)) + 'R, es decir cero o negativo: repetida muchas veces, esta operación pierde dinero '
+      + 'antes de contar comisiones y deslizamiento. Que el objetivo salga primero en '
+      + esc(pc1(pt)) + ' de los casos no basta si el stop sale primero en ' + esc(pc1(ps)) + '.</p>'
+      + '<p class="small">Esto no es un fallo del programa: es el programa haciendo su trabajo. Busca otro candidato.</p>';
+  } else {
+    read.innerHTML = "<b>Cómo leer esto:</b> el R medio es el único número que decide. "
+      + "Positivo y claro, la operación tiene sentido repetida muchas veces. Cerca de cero, es una moneda al aire "
+      + "y las comisiones la vuelven perdedora. Y recuerda lo que esta simulación no sabe: resultados "
+      + "trimestrales, halts y gaps. No es una predicción.";
+  }
+  card.appendChild(read);
+
+  if (s.verdict) card.appendChild(el("p", "small muted", "Veredicto de la herramienta: " + s.verdict));
+  (s.verdict_notes || []).forEach(n => card.appendChild(el("p", "tiny dim", "· " + n)));
+  (s.warnings || []).forEach(n => { const w = el("p", "small"); w.style.color = "var(--warn)"; w.textContent = "⚠ " + n; card.appendChild(w); });
+  box.appendChild(card);
+}
+
+/* ===================== 4. orden + riesgo ===================== */
+function renderRisk() {
+  const box = $("#risk"); box.innerHTML = "";
+  const o = D.orders, r = D.risk;
+  if (!o || !(o.orders || []).length) {
+    box.innerHTML = '<div class="card"><div class="empty">Sin orden propuesta. Ejecuta '
+      + '<code>bin/trader tamano</code> y luego <code>bin/trader riesgo</code>.</div></div>'; return; }
+
+  const byIdx = {};
+  if (r && r.results) r.results.forEach(x => { byIdx[x.index] = x; });
+  const stale = r && r.date !== todayET();
+
+  o.orders.forEach((ord, i) => {
+    const v = byIdx[i] || byIdx[i + 1] || null;
+    const card = el("div", "card");
+    const head = el("div", "row"); head.style.marginBottom = "8px";
+    const h = el("h3", null, "Orden " + (i + 1) + " de " + o.orders.length); h.style.marginRight = "auto";
+    head.appendChild(h);
+    head.appendChild(el("span", "tag" + (o.paper !== false ? "" : " bad"), o.paper !== false ? "cuenta de papel" : "DINERO REAL"));
+    if (!r) head.appendChild(el("span", "tag warn", "sin comprobar"));
+    else if (stale) head.appendChild(el("span", "tag warn", "comprobada el " + r.date));
+    else if (v) head.appendChild(el("span", "tag " + (v.verdict === "PASS" ? "ok" : "bad"), v.verdict));
+    card.appendChild(head);
+
+    const plain = el("p"); plain.style.margin = "0 0 10px";
+    plain.innerHTML = "<b>" + esc((ord.side || "").toUpperCase()) + " " + esc(ord.qty || ord.notional) + " "
+      + esc(ord.symbol) + "</b>, " + esc(ord.type || "market") + ", "
+      + (ord.time_in_force === "day" ? "válida solo hoy" : esc(ord.time_in_force || ""));
+    card.appendChild(plain);
+
+    const g = el("div", "grid g4");
+    const stat = (k, vv, s, cls) => { const n = el("div", "stat" + (cls ? " " + cls : ""));
+      n.appendChild(el("div", "k", k)); n.appendChild(el("div", "v", vv)); if (s) n.appendChild(el("div", "s", s)); return n; };
+    const pl = ord.plan || {};
+    g.appendChild(stat("Stop en el broker", money(parseFloat(ord.stop_loss_stop_price)), "orden real, no un plan", "bad"));
+    g.appendChild(stat("Objetivo en el broker", money(parseFloat(ord.take_profit_limit_price)), "orden real", "ok"));
+    g.appendChild(stat("Pérdida máxima", money(pl.max_loss), "si el stop ejecuta a su precio", "warn"));
+    g.appendChild(stat("Cierre obligatorio", pl.flat_by || "—", "hora de Nueva York"));
+    card.appendChild(g);
+
+    if (ord.why) card.appendChild(el("p", "small muted", "Por qué este tamaño: " + ord.why));
+
+    if (v && (v.reasons || []).length) {
+      const n = el("div", "notice"); n.style.marginBottom = "0";
+      n.innerHTML = "<h2>BLOCK · " + esc(v.reasons.length) + " motivo"
+        + (v.reasons.length === 1 ? "" : "s") + "</h2>";
+      const ul = el("ul", "reasons");
+      v.reasons.forEach(x => ul.appendChild(el("li", null, x)));
+      n.appendChild(ul);
+      n.appendChild(el("p", "small", "No edites la configuración para que esto pase. El día acabó para esta idea."));
+      card.appendChild(n);
+    }
+    if (v && (v.warnings || []).length) {
+      const w = el("div", "info");
+      w.innerHTML = "<b>Avisos (no bloquean):</b>";
+      const ul = el("ul", "reasons"); v.warnings.forEach(x => ul.appendChild(el("li", null, x)));
+      w.appendChild(ul); card.appendChild(w);
+    }
+    if (v && v.verdict === "PASS" && !stale) {
+      const ok = el("div", "info");
+      ok.style.borderColor = "var(--ok-line)"; ok.style.background = "var(--ok-bg)";
+      ok.innerHTML = "<b>PASS: pasó tus reglas.</b> Eso es todo lo que significa. No es una recomendación, "
+        + "y no ha enviado nada. Si decides seguir: repasa la checklist de abajo, y luego en el chat "
+        + "<code>/trader-broker</code>, donde tendrás que escribir «sí» para esta sola orden y pulsar «Allow once».";
+      card.appendChild(ok);
+    }
+
+    const det = el("details");
+    det.innerHTML = '<summary>Ver el JSON exacto que recibiría el broker</summary>';
+    const db = el("div", "dbody");
+    const clean = {}; Object.keys(ord).forEach(k => { if (k !== "why" && k !== "plan") clean[k] = ord[k]; });
+    const pre = el("pre"); pre.className = "mono"; pre.style.margin = "0"; pre.style.overflowX = "auto";
+    pre.style.fontSize = ".78rem"; pre.textContent = JSON.stringify(clean, null, 2);
+    db.appendChild(pre);
+    db.appendChild(el("p", "tiny dim", "El «why» y el plan se quedan en el archivo: nunca se envían."));
+    det.appendChild(db); card.appendChild(det);
+    box.appendChild(card);
+  });
+
+  if (r && (r.warnings || []).length) {
+    const w = el("div", "info"); w.innerHTML = "<b>Avisos generales de la cuenta:</b>";
+    const ul = el("ul", "reasons"); r.warnings.forEach(x => ul.appendChild(el("li", null, x)));
+    w.appendChild(ul); box.appendChild(w);
+  }
+  if (r && isNum(r.cash_after)) {
+    box.appendChild(el("p", "small muted", "Efectivo después de estas órdenes: " + money(r.cash_after)
+      + " · comprobado a las " + (r.now_new_york || "?") + " de Nueva York."));
+  }
+}
+
+/* ===================== 5. calculadora ===================== */
+const CK = "panel.calc";
+function calcDefaults() {
+  const c = D.config || {}, p = D.plan || {};
+  const saved = store(CK, null) || {};
+  const pick = (k, cfgVal, fallback) =>
+    saved[k] != null && saved[k] !== "" ? saved[k] : (isNum(cfgVal) ? cfgVal : fallback);
+  // Los precios se siembran desde el plan actual: es lo que el usuario quiere
+  // comprobar, y teclearlos a mano invita a equivocarse.
+  const price = (k, planVal) => {
+    if (saved[k] != null && saved[k] !== "") return saved[k];
+    return isNum(planVal) ? planVal : "";
+  };
+  return {
+    budget: pick("budget", c.budget, 1000),
+    loss: pick("loss", c.max_loss_per_trade_usd, 10),
+    entry: price("entry", p.entry),
+    stop: price("stop", p.stop),
+    target: price("target", p.target),
+    pos: pick("pos", c.max_position_pct, 50),
+    maxOrder: pick("maxOrder", c.max_order_usd, 400),
+    buffer: pick("buffer", c.cash_buffer_pct, 20)
+  };
+}
+function fillCalc() {
+  const d = calcDefaults();
+  $("#cBudget").value = d.budget; $("#cLoss").value = d.loss;
+  $("#cEntry").value = d.entry; $("#cStop").value = d.stop; $("#cTarget").value = d.target;
+  $("#cPos").value = d.pos; $("#cMaxOrder").value = d.maxOrder; $("#cBuffer").value = d.buffer;
+}
+function runCalc() {
+  const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : null; };
+  const budget = num("#cBudget"), loss = num("#cLoss"), entry = num("#cEntry"),
+        stop = num("#cStop"), target = num("#cTarget"), pos = num("#cPos"),
+        maxOrder = num("#cMaxOrder"), buffer = num("#cBuffer");
+  save(CK, { budget, loss, entry, stop, target, pos, maxOrder, buffer });
+
+  const out = $("#calcOut"); out.innerHTML = "";
+  if (!isNum(entry) || !isNum(stop) || entry <= 0) {
+    out.innerHTML = '<div class="empty">Escribe al menos una entrada y un stop.</div>'; return; }
+  if (stop >= entry) {
+    out.innerHTML = '<div class="notice" style="margin:0"><h2>El stop tiene que estar por debajo de la entrada</h2>'
+      + '<p>En una compra sales por abajo. Un stop a ' + esc(money(stop)) + ' con entrada a ' + esc(money(entry))
+      + ' no limita nada: ya estarías fuera.</p></div>'; return; }
+
+  const risk = Math.round((entry - stop) * 100) / 100;
+  const caps = [];
+  if (isNum(loss) && loss > 0) caps.push({ n: Math.floor(loss / risk), w: "tu pérdida máxima por operación" });
+  if (isNum(budget) && isNum(pos)) caps.push({ n: Math.floor((budget * pos / 100) / entry), w: "el tope de posición" });
+  if (isNum(maxOrder) && maxOrder > 0) caps.push({ n: Math.floor(maxOrder / entry), w: "la orden máxima" });
+  if (isNum(budget) && isNum(buffer)) caps.push({ n: Math.floor((budget * (1 - buffer / 100)) / entry), w: "el efectivo tras el colchón" });
+  const valid = caps.filter(c => isFinite(c.n));
+  let shares = valid.length ? Math.min.apply(null, valid.map(c => c.n)) : 0;
+  if (shares < 0) shares = 0;
+  const bound = valid.filter(c => c.n === shares).map(c => c.w);
+
+  const cost = Math.round(shares * entry * 100) / 100;
+  const maxLoss = Math.round(shares * risk * 100) / 100;
+  const rr = isNum(target) && target > entry ? Math.round(((target - entry) / risk) * 100) / 100 : null;
+  const gain = isNum(target) && target > entry ? Math.round(shares * (target - entry) * 100) / 100 : null;
+  const minrr = D.config && D.config.min_reward_risk;
+
+  const g = el("div", "grid g4");
+  const stat = (k, v, s, cls) => { const n = el("div", "stat" + (cls ? " " + cls : ""));
+    n.appendChild(el("div", "k", k)); n.appendChild(el("div", "v", v)); if (s) n.appendChild(el("div", "s", s)); return n; };
+  g.appendChild(stat("Acciones", String(shares), shares ? "números enteros, sin redondear hacia arriba" : "no cabe ni una", shares ? "" : "bad"));
+  g.appendChild(stat("Coste", money(cost), "a la entrada"));
+  g.appendChild(stat("Riesgo por acción", money(risk), "entrada menos stop"));
+  g.appendChild(stat("Pérdida máxima", money(maxLoss), "al precio del stop", "warn"));
+  out.appendChild(g);
+
+  if (rr != null) {
+    const g2 = el("div", "grid g4"); g2.style.marginTop = "12px";
+    const bad = isNum(minrr) && rr < minrr;
+    g2.appendChild(stat("Beneficio : riesgo", r2(rr) + " : 1", isNum(minrr) ? "tu mínimo es " + r2(minrr) : "", bad ? "bad" : "ok"));
+    g2.appendChild(stat("Ganancia si acierta", money(gain), "al objetivo", "ok"));
+    g2.appendChild(stat("Objetivo en R", r2(rr) + "R", ""));
+    const need = rr > 0 ? 1 / (1 + rr) : null;
+    g2.appendChild(stat("Acierto necesario", need != null ? pc1(need) : "—", "para no perder ni ganar"));
+    out.appendChild(g2);
+  }
+
+  if (shares > 0 && bound.length) {
+    out.appendChild(el("p", "small muted", "Lo que decide el tamaño: " + bound.join(" y ") + "."));
+  }
+
+  if (shares === 0) {
+    const n = el("div", "notice"); n.style.margin = "12px 0 0";
+    n.innerHTML = "<h2>Esta operación no cabe en tus límites</h2><p>Con un riesgo de " + esc(money(risk))
+      + " por acción, ni una sola acción entra dentro de lo que te has permitido perder. "
+      + "<b>La respuesta correcta es no operarla</b>, no ampliar el límite: el stop está demasiado lejos "
+      + "para tu cuenta. Busca un valor más barato o un setup con el stop más cerca.</p>";
+    out.appendChild(n);
+  } else if (isNum(minrr) && rr != null && rr < minrr) {
+    const n = el("div", "info"); n.style.margin = "12px 0 0";
+    n.innerHTML = "<b>El beneficio:riesgo no llega a tu mínimo de " + esc(r2(minrr)) + ".</b> "
+      + "El control de riesgo la va a bloquear. Eso está bien: arriesgar " + esc(money(risk))
+      + " por acción para ganar menos de " + esc(r2(minrr)) + " veces esa cantidad no compensa a largo plazo.";
+    out.appendChild(n);
+  }
+
+  const note = el("p", "tiny dim"); note.style.marginTop = "12px";
+  note.textContent = "Esta calculadora es para que entiendas la aritmética. La cifra que cuenta es la de "
+    + "bin/trader tamano, que además mira tu cartera y tu efectivo real, y la de bin/trader riesgo, que la aprueba o no.";
+  out.appendChild(note);
+}
+
+/* ===================== 6. checklist ===================== */
+const CHECKS = [
+  "Puedo decir en una frase por qué este valor se mueve hoy.",
+  "No publica resultados trimestrales hoy ni mañana.",
+  "El stop estaba decidido antes de pensar en entrar, y no lo he movido.",
+  "El stop está en la orden del broker, no solo en mi plan.",
+  "La pérdida máxima cabe en lo que me permití perder por operación.",
+  "La pérdida máxima cabe en lo que me queda del límite diario.",
+  "El beneficio:riesgo llega a mi mínimo, sin haber bajado el mínimo.",
+  "La simulación da un R medio claramente positivo.",
+  "El control de riesgo dice PASS, y no he editado la configuración para lograrlo.",
+  "Puedo perder esta cantidad hoy sin que cambie nada en mi vida."
+];
+function ckKey() { return "panel.checks." + todayET(); }
+function renderChecks() {
+  const box = $("#checks"); box.innerHTML = "";
+  const state = store(ckKey(), {});
+  CHECKS.forEach((txt, i) => {
+    const lab = el("label", "check" + (state[i] ? " on" : ""));
+    lab.style.margin = "0";
+    const cb = el("input"); cb.type = "checkbox"; cb.checked = !!state[i];
+    cb.addEventListener("change", () => {
+      const s = store(ckKey(), {}); s[i] = cb.checked; save(ckKey(), s); renderChecks();
+    });
+    lab.appendChild(cb); lab.appendChild(el("span", null, txt));
+    box.appendChild(lab);
+  });
+  const n = CHECKS.filter((_, i) => state[i]).length;
+  $("#ckCount").textContent = n + " / " + CHECKS.length;
+  $("#ckCount").className = "chip" + (n === CHECKS.length ? " ok" : n ? " warn" : "");
+
+  const v = $("#ckVerdict"); v.innerHTML = "";
+  if (n < CHECKS.length) {
+    const d = el("div", "info"); d.style.margin = "0";
+    d.innerHTML = "<b>Faltan " + (CHECKS.length - n) + ".</b> Cada casilla sin marcar es una razón "
+      + "concreta por la que esta operación todavía no está lista. Ninguna es opcional.";
+    v.appendChild(d);
+  } else {
+    const d = el("div", "info"); d.style.margin = "0";
+    d.style.borderColor = "var(--ok-line)"; d.style.background = "var(--ok-bg)";
+    d.innerHTML = "<b>Las diez están marcadas.</b> Eso significa que has repasado tu propio proceso, "
+      + "nada más: no autoriza nada y no ha enviado nada. La decisión sigue siendo tuya, en el chat, "
+      + "escribiendo «sí» para esta sola orden.";
+    v.appendChild(d);
+  }
+}
+
+/* ===================== 7. diario ===================== */
+const JK = "panel.journal";
+function jList() { const v = store(JK, []); return Array.isArray(v) ? v : []; }
+function renderJournal() {
+  const rows = jList().slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const taken = rows.filter(r => r.outcome !== "skipped");
+  const withR = taken.filter(r => isNum(r.R));
+  const sumR = withR.reduce((s, r) => s + r.R, 0);
+  const wins = taken.filter(r => r.outcome === "target").length;
+
+  const st = $("#journalStats"); st.innerHTML = "";
+  const stat = (k, v, s, cls) => { const n = el("div", "stat" + (cls ? " " + cls : ""));
+    n.appendChild(el("div", "k", k)); n.appendChild(el("div", "v", v)); if (s) n.appendChild(el("div", "s", s)); return n; };
+  st.appendChild(stat("Sesiones apuntadas", String(rows.length), "la recomendación son 30 en seco",
+    rows.length >= 30 ? "ok" : ""));
+  st.appendChild(stat("Operaciones tomadas", String(taken.length), rows.length - taken.length + " descartadas"));
+  st.appendChild(stat("Acierto", taken.length ? pc1(wins / taken.length) : "—",
+    wins + " al objetivo de " + taken.length));
+  st.appendChild(stat("R acumulado", withR.length ? (sumR > 0 ? "+" : "") + r2(sumR) + "R" : "—",
+    withR.length ? "R medio " + r2(sumR / withR.length) : "sin datos",
+    withR.length ? (sumR > 0 ? "ok" : "bad") : ""));
+
+  const box = $("#journal"); box.innerHTML = "";
+  if (!rows.length) {
+    box.innerHTML = '<div class="card"><div class="empty">El diario está vacío. Apunta tu primera '
+      + 'sesión en seco: recorre los pasos 1 a 9 sin conectar ningún broker y escribe aquí qué habría pasado.</div></div>';
+    return;
+  }
+  const card = el("div", "card");
+  const tw = el("div", "tw");
+  const t = el("table");
+  t.innerHTML = '<thead><tr><th>Fecha</th><th>Valor</th><th>Setup</th><th class="num">Entrada</th>'
+    + '<th class="num">Stop</th><th class="num">Objetivo</th><th>Resultado</th><th class="num">R</th><th>Notas</th><th></th></tr></thead>';
+  const tb = el("tbody");
+  const words = { target: ["ok", "objetivo"], stop: ["bad", "stop"], close: ["", "ninguno"], skipped: ["warn", "no la tomé"] };
+  rows.forEach(r => {
+    const tr = el("tr");
+    const w = words[r.outcome] || ["", r.outcome];
+    tr.innerHTML = "<td>" + esc(r.date) + "</td><td><b>" + esc(r.symbol) + "</b></td><td>" + esc(r.setup) + "</td>"
+      + '<td class="num">' + esc(isNum(r.entry) ? r2(r.entry) : "—") + "</td>"
+      + '<td class="num">' + esc(isNum(r.stop) ? r2(r.stop) : "—") + "</td>"
+      + '<td class="num">' + esc(isNum(r.target) ? r2(r.target) : "—") + "</td>"
+      + '<td><span class="tag ' + w[0] + '">' + esc(w[1]) + "</span></td>"
+      + '<td class="num">' + esc(isNum(r.R) ? (r.R > 0 ? "+" : "") + r2(r.R) : "—") + "</td>"
+      + '<td style="white-space:normal;max-width:30ch">' + esc(r.note || "") + "</td>";
+    const td = el("td");
+    const b = el("button", "btn", "borrar");
+    b.addEventListener("click", () => {
+      const all = jList(); const i = all.findIndex(x => x.id === r.id);
+      if (i >= 0) { all.splice(i, 1); save(JK, all); renderJournal(); }
+    });
+    td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
+  });
+  t.appendChild(tb); tw.appendChild(t); card.appendChild(tw);
+  box.appendChild(card);
+}
+function addJournal() {
+  const num = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : null; };
+  const entry = num("#jEntry"), stop = num("#jStop"), target = num("#jTarget");
+  const out = $("#jOut").value;
+  let R = null;
+  if (isNum(entry) && isNum(stop) && entry > stop) {
+    const risk = entry - stop;
+    if (out === "target" && isNum(target)) R = Math.round(((target - entry) / risk) * 1000) / 1000;
+    else if (out === "stop") R = -1;
+  }
+  const rec = {
+    id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+    date: $("#jDate").value || todayET(),
+    symbol: ($("#jSym").value || "?").toUpperCase().trim(),
+    setup: $("#jSetup").options[$("#jSetup").selectedIndex].text,
+    entry, stop, target, outcome: out, note: $("#jNote").value.trim()
+  };
+  if (R != null) rec.R = R;
+  const all = jList(); all.push(rec); save(JK, all);
+  $("#jSym").value = ""; $("#jEntry").value = ""; $("#jStop").value = ""; $("#jTarget").value = ""; $("#jNote").value = "";
+  renderJournal();
+}
+function journalCsv() {
+  const rows = jList();
+  if (!rows.length) return;
+  const head = ["fecha", "valor", "setup", "entrada", "stop", "objetivo", "resultado", "R", "notas"];
+  const q = s => '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"';
+  const body = rows.map(r => [r.date, r.symbol, r.setup, r.entry, r.stop, r.target, r.outcome, r.R, r.note].map(q).join(","));
+  const blob = new Blob(["﻿" + [head.map(q).join(",")].concat(body).join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = el("a"); a.href = URL.createObjectURL(blob);
+  a.download = "diario-trading-" + todayET() + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ===================== 8. glosario ===================== */
+const GLOSS = [
+  ["Rango de apertura", "El máximo y el mínimo de los primeros minutos de sesión (15 por defecto). Muchas estrategias esperan a que el precio cierre por encima."],
+  ["Ruptura (breakout)", "Cuando el precio cierra por encima de un nivel que antes le frenaba. Que rompa no significa que siga: la mayoría de rupturas fallan."],
+  ["Stop", "La orden que te saca cuando te has equivocado. Se decide antes de entrar y no se mueve a peor."],
+  ["Objetivo (take profit)", "La orden que recoge la ganancia. Si no la pones, acabarás decidiendo con el pulso acelerado."],
+  ["R", "Tu unidad de riesgo: entrada menos stop, por acción. Un objetivo a 2R gana el doble de lo que arriesga."],
+  ["R medio", "Lo que ganas o pierdes de media por operación, medido en R. Es el único número que decide si una estrategia sirve."],
+  ["Bracket", "Una orden de compra que lleva pegados su stop y su objetivo. Cuando uno se ejecuta, el otro se cancela."],
+  ["Deslizamiento (slippage)", "La diferencia entre el precio que esperabas y el que te dan. En papel no existe; en real sí."],
+  ["Gap", "Cuando el valor abre a un precio muy distinto del cierre anterior. Un stop no te protege de un gap."],
+  ["Halt", "Parada temporal de la cotización. Mientras está parada no puedes salir."],
+  ["Flat by", "La hora a la que cierras todo, ganes o pierdas. Un day trade no se queda abierto de un día para otro."],
+  ["Cuenta de papel", "Dinero simulado con precios reales. Es donde debes estar los primeros meses."],
+  ["8-K", "El formulario con el que una empresa de EE.UU. comunica un hecho relevante a la SEC."],
+  ["PDT", "La vieja regla que exigía 25.000 $ para operar intradía a menudo. FINRA la retiró en junio de 2026, pero tu broker puede seguir aplicándola."],
+  ["Wash sale", "Regla fiscal de EE.UU. que anula una pérdida si recompras lo mismo en 30 días. Operar a diario las hace muy probables."]
+];
+function renderGloss() {
+  const box = $("#glossary"); box.innerHTML = "";
+  const t = el("table");
+  t.innerHTML = "<thead><tr><th>Término</th><th>Qué es</th></tr></thead>";
+  const tb = el("tbody");
+  GLOSS.forEach(([k, v]) => {
+    const tr = el("tr");
+    tr.innerHTML = "<td><b>" + esc(k) + "</b></td><td style='white-space:normal'>" + esc(v) + "</td>";
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb); box.appendChild(t);
+}
+
+/* ===================== render ===================== */
+function render() {
+  renderChips(); renderLoadWarn(); renderSteps();
+  renderPlan(); renderSim(); renderRisk();
+  fillCalc(); runCalc(); renderChecks(); renderJournal(); renderGloss();
+  const anyData = !!(D.plan || D.orders || D.risk || D.watchlist || D.entry);
+  if (!anyData && !store("panel.ftSeen", false)) { $("#firstTime").open = true; }
+}
+
+/* ===================== arranque ===================== */
+["cBudget", "cLoss", "cEntry", "cStop", "cTarget", "cPos", "cMaxOrder", "cBuffer"]
+  .forEach(id => $("#" + id).addEventListener("input", runCalc));
+$("#reload").addEventListener("click", loadAll);
+$("#firstTime").addEventListener("toggle", () => { if ($("#firstTime").open) save("panel.ftSeen", true); });
+$("#jAdd").addEventListener("click", addJournal);
+$("#jCsv").addEventListener("click", journalCsv);
+$("#jClear").addEventListener("click", () => {
+  if (confirm("¿Borrar todas las entradas del diario? No se puede deshacer.")) { save(JK, []); renderJournal(); }
+});
+$("#jPrefill").addEventListener("click", () => {
+  const p = D.plan; if (!p) { alert("No hay plan todavía. Ejecuta bin/trader salida."); return; }
+  $("#jDate").value = p.date || todayET();
+  $("#jSym").value = p.symbol || "";
+  $("#jEntry").value = isNum(p.entry) ? p.entry : "";
+  $("#jStop").value = isNum(p.stop) ? p.stop : "";
+  $("#jTarget").value = isNum(p.target) ? p.target : "";
+});
+$("#jDate").value = todayET();
+setInterval(renderChips, 20000);
+loadAll();
+</script>
+</body>
+</html>
