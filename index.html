@@ -383,6 +383,16 @@ hr{border:0;border-top:1px solid var(--line);margin:var(--s4) 0}
         <p class="lede">Cuatro fases, en orden. <b>Las dos primeras no necesitan ninguna cuenta en ningún
         sitio, ni tarjeta, ni bróker, ni un solo euro.</b> Marca cada paso cuando lo hagas: se guarda en
         este navegador.</p></div>
+      <div class="note info">
+        <h3>Antes de nada: dónde se escriben estos comandos</h3>
+        <p>En la <b>Terminal</b> (en un Mac: Cmd + Espacio, escribe «Terminal», Intro), y <b>siempre dentro
+        de la carpeta <code>trade</code></b>. Por eso el primer comando de abajo la descarga y entra en ella.</p>
+        <p>Si alguna vez ves <code>no such file or directory: bin/trader</code>, no es que falte nada:
+        es que estás fuera de esa carpeta. Se arregla con un comando:</p>
+        <div id="cdhint"></div>
+        <p class="sm">También puedes llamarlo por su ruta completa desde donde estés, y funciona igual:
+        <code>~/trade/bin/trader estado</code></p>
+      </div>
       <div id="phases"></div>
     </section>
 
@@ -853,7 +863,10 @@ const PHASES = [
     steps:[
       { t:"Tener Python 3.8 o posterior", q:"Es lo único que las herramientas necesitan. En Mac y Linux suele venir ya. Si el comando te dice que falta, descárgalo.",
         web:["https://www.python.org/downloads/","python.org/downloads"], cmd:"python3 --version" },
-      { t:"Comprobar que todo está en su sitio", q:"Te dice tu Python, tus límites, cuántas skills hay, y verifica con SHA-256 que el código no se ha tocado.", cmd:"bin/trader estado" },
+      { t:"Descargar el tablero a tu ordenador", q:"Hasta ahora está en GitHub, no en tu máquina. Esto crea la carpeta trade en tu carpeta personal. En un Mac, si te ofrece instalar las Command Line Tools, acepta y repite el comando cuando acabe.",
+        cmd:"cd ~ && git clone https://github.com/javi-molin/trade.git && cd trade",
+        nota:"A partir de aquí, TODOS los comandos se ejecutan dentro de esa carpeta. Cada vez que abras una terminal nueva, lo primero es: cd ~/trade" },
+      { t:"Comprobar que todo está en su sitio", q:"Te dice tu Python, tus límites, cuántas skills hay, y verifica con SHA-256 que el código no se ha tocado. Si da «no such file or directory», no estás dentro de la carpeta trade: haz cd ~/trade primero.", cmd:"bin/trader estado" },
       { t:"Ejecutar las pruebas", q:"315 pruebas, sin internet, sobre datos reales congelados. Si pasan, la aritmética que calculará tus posiciones funciona.", cmd:"bin/trader test" },
       { t:"Poner tus límites", q:"Abre trader/config.json y cambia los números. Los que vienen son diminutos a propósito. El más importante es max_loss_per_trade_usd: lo máximo que puedes perder en una operación.",
         nota:"Este archivo es público (está en GitHub). No pongas ahí tu email." },
@@ -1479,6 +1492,7 @@ function renderGloss() {
 /* ---------------- render ---------------- */
 function render() {
   renderChips(); renderNext(); renderProgress(); renderSnapshot(); renderPhases();
+  $("#cdhint").replaceChildren(cmdBox("cd ~/trade"));
   tabla("#sources", SOURCES, ["Fuente","Qué aporta","Ver","Cuenta"], "ok");
   tabla("#services", SERVICES, ["Servicio","Para qué","Ir","Cuándo"], "warn");
   renderSteps(); renderPlan(); renderSim(); renderRisk();

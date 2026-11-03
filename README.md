@@ -52,9 +52,32 @@ sesiones en seco.
 El panel **solo lee**: no se conecta a ningún broker, no tiene tus claves y no existe ningún
 botón que envíe una orden. No carga nada de internet, y la CI lo comprueba en cada push.
 
-## Empezar en 4 pasos
+## Empezar en 5 pasos
 
-### 1. Comprueba que todo está en su sitio
+### 1. Descarga el repositorio a tu ordenador
+
+```bash
+cd ~
+```
+
+```bash
+git clone https://github.com/javi-molin/trade.git
+```
+
+```bash
+cd trade
+```
+
+En un Mac, si `git clone` te ofrece instalar las *Command Line Tools*, acepta y
+repite el comando cuando acabe.
+
+> **Todos los comandos de aquí en adelante se ejecutan dentro de la carpeta
+> `trade`.** Cada vez que abras una terminal nueva, lo primero es `cd ~/trade`.
+> Si ves `no such file or directory: bin/trader`, no falta nada: estás fuera de
+> esa carpeta. También puedes llamarlo por su ruta completa desde donde estés
+> (`~/trade/bin/trader estado`), que funciona igual.
+
+### 2. Comprueba que todo está en su sitio
 
 ```bash
 bin/trader estado
@@ -63,7 +86,7 @@ bin/trader estado
 Verifica tu Python, lee tu configuración, cuenta las once skills y comprueba
 con SHA-256 que el código sigue siendo idéntico al que audité.
 
-### 2. Ejecuta las pruebas
+### 3. Ejecuta las pruebas
 
 ```bash
 bin/trader test
@@ -78,7 +101,7 @@ Las mismas 315 pruebas corren en GitHub Actions en cada push
 3.11 y 3.13, junto con la verificación SHA-256 del código importado. Así que si
 alguna vez alguien toca una de las once herramientas, salta en el PR.
 
-### 3. Pon tus números
+### 4. Pon tus números
 
 Abre [`trader/config.json`](trader/config.json) y edítalo. **Los valores que
 vienen son deliberadamente diminutos**: 1.000 $ de presupuesto, 10 $ de pérdida
@@ -109,7 +132,7 @@ export SEC_USER_AGENT="Tu Nombre tu@email.com"
 `bin/trader estado` te dice de dónde la está leyendo, y la CI falla si alguna
 vez una identidad real acaba en el archivo.
 
-### 4. Aplica los permisos (opcional pero recomendado)
+### 5. Aplica los permisos (opcional pero recomendado)
 
 ```bash
 cp docs/permisos-ejemplo.json .claude/settings.json
