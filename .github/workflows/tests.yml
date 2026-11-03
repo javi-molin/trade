@@ -91,19 +91,75 @@ jobs:
 
       - name: Comprobar que el panel no habla con el exterior
         run: |
-          # index.html promete que no envia nada a ninguna parte. Esto lo verifica:
-          # sin recursos remotos, sin envios, y sin otro fetch que los archivos locales.
-          malo=$(grep -nE "https?://|//cdn\.|<script[^>]+src=|<link[^>]+href=|XMLHttpRequest|sendBeacon|WebSocket|EventSource|new Image\(" index.html || true)
-          if [ -n "$malo" ]; then
-            echo "index.html contiene referencias externas o envios:"
-            echo "$malo"
-            exit 1
+          # index.html promete dos cosas distintas:
+          #
+          #   1. No CARGA nada de fuera: ningun script, hoja de estilo, fuente,
+          #      imagen ni iframe remoto. Asi no hay terceros ejecutandose en la
+          #      pagina ni enterandose de que la has abierto.
+          #   2. No ENVIA nada a ninguna parte.
+          #
+          # Un enlace <a href="https://..."> no es ninguna de las dos: no carga
+          # nada ni envia nada hasta que tu decides pulsarlo, y la guia los
+          # necesita para decirte a que web ir. Por eso se permiten, y solo esos.
+          recursos=$(grep -nE "<script[^>]+src=|<link[^>]+href=|<iframe|<img[^>]+src=[\"']https?:|<embed|<object|@import|url\(\s*[\"']?https?:" index.html || true)
+          if [ -n "$recursos" ]; then
+            echo "index.html carga un recurso externo:"; echo "$recursos"; exit 1
+          fi
+          envios=$(grep -nE "XMLHttpRequest|sendBeacon|new WebSocket|new EventSource|new Image\(|navigator\.send|\.submit\(" index.html || true)
+          if [ -n "$envios" ]; then
+            echo "index.html contiene un mecanismo de envio:"; echo "$envios"; exit 1
           fi
           # Todo fetch debe apuntar a la carpeta trader/ del propio repositorio.
           fetches=$(grep -oE "fetch\([^)]*" index.html || true)
-          echo "$fetches" | grep -vE "fetch\(FILES\[k\]" | grep -q "fetch(" \
-            && { echo "fetch inesperado:"; echo "$fetches"; exit 1; }
-          echo "el panel solo lee archivos locales"
+          if echo "$fetches" | grep -vE "fetch\(FILES\[k\]" | grep -q "fetch("; then
+            echo "fetch inesperado:"; echo "$fetches"; exit 1
+          fi
+          # Todo enlace externo debe abrirse en otra pestana y sin filtrar la
+          # pagina de origen. En esta pagina los enlaces no estan escritos en el
+          # HTML: los construye la funcion webLink() en JavaScript. Asi que hay
+          # que comprobar las dos cosas, o la comprobacion no verifica nada.
+          python - <<'EOF'
+          import re, sys
+          html = open("index.html", encoding="utf-8").read()
+          fallos = []
+
+          # 1. Enlaces escritos a mano en el HTML, si algun dia los hay.
+          estaticos = re.findall(r"<a\b[^>]*href=[\"']https?:[^>]*>", html)
+          for a in estaticos:
+              rel = (re.search(r'rel=["\']([^"\']*)', a) or [None, ""])[1]
+              if 'target="_blank"' not in a or "noopener" not in rel or "noreferrer" not in rel:
+                  fallos.append("estatico sin target/rel: " + a)
+
+          # 2. El helper que los construye.
+          m = re.search(r"function webLink\([^)]*\)\s*\{(.*?)\n\}", html, re.S)
+          if not m:
+              fallos.append("no encuentro la funcion webLink(): si se ha renombrado, "
+                            "actualiza esta comprobacion en vez de borrarla")
+          else:
+              cuerpo = m.group(1)
+              if 'target = "_blank"' not in cuerpo:
+                  fallos.append('webLink() no pone target="_blank"')
+              rel = re.search(r'\.rel\s*=\s*"([^"]*)"', cuerpo)
+              if not rel or "noopener" not in rel.group(1) or "noreferrer" not in rel.group(1):
+                  fallos.append('webLink() no pone rel="noopener noreferrer"')
+
+          # 3. Ningun otro sitio debe asignar un href externo por su cuenta.
+          for h in re.findall(r"\.href\s*=\s*[\"']https?://[^\"']*", html):
+              fallos.append("href externo asignado fuera de webLink(): " + h)
+
+          if fallos:
+              print("Enlaces externos inseguros:")
+              for f in fallos:
+                  print("  " + f)
+              sys.exit(1)
+
+          urls = sorted(set(re.findall(r'"(https?://[^"]+)"', html)))
+          print("%d enlaces estaticos y el helper webLink(), todos seguros." % len(estaticos))
+          print("Destinos externos a los que la pagina puede enviarte:")
+          for u in urls:
+              print("  " + u)
+          EOF
+          echo "el panel no carga ni envia nada"
 
       - name: Comprobar que no se cuela ningun secreto
         run: |
