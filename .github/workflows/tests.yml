@@ -18,11 +18,23 @@ permissions:
 jobs:
   test:
     name: pruebas (Python ${{ matrix.python }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.9", "3.11", "3.13"]
+        include:
+          # ubuntu-latest paso a Ubuntu 26.04 el 3 de noviembre de 2026 y
+          # setup-python ya no sirve Python 3.9 en esa imagen. El pack promete
+          # funcionar en 3.8 o posterior, asi que la version mas antigua se
+          # sigue probando de verdad, en una imagen que si la tiene.
+          # Si ubuntu-22.04 tambien desaparece, este job fallara con el mismo
+          # error y habra que subir el suelo probado (y la promesa del README).
+          - python: "3.9"
+            runner: ubuntu-22.04
+          - python: "3.11"
+            runner: ubuntu-latest
+          - python: "3.13"
+            runner: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
