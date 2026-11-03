@@ -71,6 +71,24 @@ jobs:
           print("cuenta de papel, sin opciones, sin margen, sin cortos, stop obligatorio")
           EOF
 
+      - name: Comprobar que no se publica ninguna identidad real
+        run: |
+          # Este repositorio es publico y GitHub Pages sirve trader/config.json.
+          # La identidad para la SEC va en la variable de entorno SEC_USER_AGENT,
+          # nunca en el archivo. Esto falla si alguien la escribe ahi.
+          python - <<'EOF'
+          import json, sys
+          ua = (json.load(open("trader/config.json")).get("sec_user_agent") or "").strip()
+          if "@" in ua and "you@example.com" not in ua:
+              print('trader/config.json lleva una identidad real en "sec_user_agent": %r' % ua)
+              print()
+              print("Este archivo es publico (github.io). Quitalo del archivo y usa la variable:")
+              print('    export SEC_USER_AGENT="Tu Nombre tu@email.com"')
+              print("Si ya se subio, cambia tambien lo que haga falta: el historico de git lo conserva.")
+              sys.exit(1)
+          print("sin identidad real en la configuracion publica")
+          EOF
+
       - name: Comprobar que el panel no habla con el exterior
         run: |
           # index.html promete que no envia nada a ninguna parte. Esto lo verifica:

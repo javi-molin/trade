@@ -97,8 +97,17 @@ Lo que más importa, en orden:
 | `paper` | `true` = simulado. **Déjalo así.** | `true` |
 
 Si vas a usar las skills de la SEC (`analista`, `noticias`, `congreso`), la SEC
-exige identificarse: pon tu nombre y tu email en `sec_user_agent`. Si lo haces,
-revisa [NOTICE.md](NOTICE.md#tu-email-y-este-repositorio) antes de hacer commit.
+exige identificarse. **No pongas tu email en `trader/config.json`:** este
+repositorio es público y GitHub Pages lo sirve en
+`https://javi-molin.github.io/trade/trader/config.json`. Usa la variable de
+entorno, que tiene prioridad sobre el archivo:
+
+```bash
+export SEC_USER_AGENT="Tu Nombre tu@email.com"
+```
+
+`bin/trader estado` te dice de dónde la está leyendo, y la CI falla si alguna
+vez una identidad real acaba en el archivo.
 
 ### 4. Aplica los permisos (opcional pero recomendado)
 
